@@ -218,8 +218,10 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 }
 
 /*
-* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with n samples. Splits the computation into multiple cycles in order to handle large values of n.
+* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with n samples.
+* Uses the Central Limit Theorem with samples of size 50, thus also handling large values of n.
 * 
+*
 * Time Complexity: O(n)
 *
 * func: The function of 2 variables to be integrated
@@ -236,7 +238,7 @@ double MonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds, int
     long double workingAverage = 0;
     long double trueAverage = 0;
 
-    int cycles = n % 100 + 1;
+    int cycles = n % 50 + 1;
 
     for (int i = 1; i <= cycles; i++)
     {
@@ -245,11 +247,11 @@ double MonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds, int
             workingAverage += func(_genGaussRand(x1, x2, precision, maxStdDev), _genGaussRand(y1, y2, precision, maxStdDev));
         }
 
-        trueAverage += workingAverage /n * (x2-x1) * (y2-y1);
+        trueAverage += workingAverage / n;
         workingAverage = 0;
     }
 
-    return trueAverage;
+    return trueAverage * (x2-x1) * (y2-y1);
 }
 /*
 * Computes the value at a given index for the halton sequence of the provided base
@@ -279,7 +281,9 @@ void fillHaltons()
     }
 }
 /*
-* Performs 2 dimensional numerical integration on the given function using a Quasi Monte Carlo method selecting n values from the Hatlon sequence. Must ensure that the size of the Halton sequence arrays matches n. 
+* Performs 2 dimensional numerical integration on the given function using a Quasi Monte Carlo method 
+* selecting n values from the Hatlon sequence. Must ensure that the size of the Halton sequence arrays matches n. 
+* Uses the Central Limit Theorem with samples of size 50, thus also handling large values of n.
 * 
 * Time Complexity: O(n) after first call, O(nlog(n)) on first
 *
@@ -304,7 +308,7 @@ double QuasiMonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds
     }
 
 
-    int cycles = n % 100 + 1;
+    int cycles = n % 50 + 1;
     
 
     if (xRange > yRange)
@@ -318,7 +322,7 @@ double QuasiMonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds
                     workingAverage += func(x1+halton2[i]*xRange, y1+halton3[i]*yRange);
                 }
 
-                trueAverage += workingAverage /n * (x2-x1) * (y2-y1);
+                trueAverage += workingAverage /n;
                 workingAverage = 0;
             }
         }
@@ -332,12 +336,12 @@ double QuasiMonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds
                 workingAverage += func(x1+halton2[i]*xRange, y1+halton3[i]*yRange);
             }
 
-            trueAverage += workingAverage /n * (x2-x1) * (y2-y1);
+            trueAverage += workingAverage /n;
             workingAverage = 0;
         }
     }
 
-    return trueAverage;
+    return trueAverage * (x2-x1) * (y2-y1);
 }
 
 
