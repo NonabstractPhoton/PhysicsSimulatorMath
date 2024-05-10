@@ -1,6 +1,6 @@
 #include "SimulatorMath.h"
 
-double h = 10;
+double z = 10;
 char buffer[250];
 
 
@@ -10,14 +10,13 @@ int precision = 100;
 double maxStdDev = 1.5;
 
 // Quasi Monte Carlo Halton Sequence vars
-int haltonSize = 100;
-double halton2[100];
-double halton3[100];
-bool haltonsFilled = false;
+double* halton2 = NULL;
+double* halton3 = NULL;
+int haltonSize = 0;
 
 
 /*
-* Logs a double value with a given label. Uses a predeclared char buffer called buffer
+* Internal Function. Logs a double value with a given label. Uses a predeclared char buffer called buffer
 *
 * label: cstr of label to be printed
 *
@@ -29,16 +28,16 @@ void _logDouble(const char* label, double d)
     puts(buffer);
 }
 
-//  Priamry Function 
-double f(double x, double y)
+//  Internal Primary Function 1 
+double f1(double x, double y)
 {
-    return h/pow((x*x+y*y+h*h), 1.5);
+    return z/pow((x*x+y*y+z*z), 1.5);
 }
 
-// Linear Test Function
-double g(double x, double y)
+// Internal Primary Function 2
+double f2(double x, double y)
 {
-    return 5*x+4*y;
+    return exp(-1 * (x*x + y*y));
 }
 
 /*
@@ -54,7 +53,7 @@ double g(double x, double y)
 *
 * returns: The approximated value of the integral
 */
-double MidpointSumIntegral(Function2D func, struct SimulatorMathRect* bounds, int n)
+double MidpointSumIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {    
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
 
@@ -70,7 +69,7 @@ double MidpointSumIntegral(Function2D func, struct SimulatorMathRect* bounds, in
     {
         for (int j = 0; j < n; j++)
         {
-            area += func(xStart + i*xStep, yStart + i*yStep);
+            area += func(xStart + i*xStep, yStart + j*yStep);
         }
     }
 
@@ -90,7 +89,7 @@ double MidpointSumIntegral(Function2D func, struct SimulatorMathRect* bounds, in
 *
 * returns: The approximated value of the integral
 */
-double TrapezoidalSumIntegral(Function2D func, struct SimulatorMathRect* bounds, int n)
+double TrapezoidalSumIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
 
@@ -99,6 +98,7 @@ double TrapezoidalSumIntegral(Function2D func, struct SimulatorMathRect* bounds,
 
     double area = 0;
 
+    // Corners
     area += func(x1, y1);
     area += func(x2, y1);
     area += func(x1, y2);
@@ -106,11 +106,13 @@ double TrapezoidalSumIntegral(Function2D func, struct SimulatorMathRect* bounds,
 
     for (int i = 1; i < n; i++)
     {
+        // Sides
         area += 2*func(x1 + i*xStep, y1);
         area += 2*func(x1 + i*xStep, y2);
         area += 2*func(x1, y1 + i*yStep);
         area += 2*func(x2, y1 + i*yStep);
 
+        // Inner 
         for (int j = 1; j < n; j++)
         {
             area += 4*func(x1 + i*xStep, y1 + j*yStep);
@@ -133,7 +135,7 @@ double TrapezoidalSumIntegral(Function2D func, struct SimulatorMathRect* bounds,
 *
 * returns: The approximated value of the integral
 */
-double SimpsonsIntegral(Function2D func, struct SimulatorMathRect* bounds, int n)
+double SimpsonsIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
     double xStep = (x2-x1)/n;
@@ -141,47 +143,54 @@ double SimpsonsIntegral(Function2D func, struct SimulatorMathRect* bounds, int n
 
     double area = 0;
 
+    // Corners
     area += func(x1, y1);
     area += func(x2, y1);
     area += func(x1, y2);
     area += func(x2, y2);
 
-    int c = 2;
-
+    // Odd x Terms
     for (int i = 1; i < n; i+=2)
     {
+        // Sides
         area += 4*func(x1+i*xStep, y1);
         area += 4*func(x1+i*xStep, y2);
         area += 4*func(x1, y1+i*yStep);
         area += 4*func(x2, y1+i*yStep);
 
+        // Odd y terms
         for (int j = 1; j < n; j+=2)
         {
-            area += 16*func(x1+i*xStep, y1+i*yStep);
+            area += 16*func(x1+i*xStep, y1+j*yStep);
         }
 
+        // Even y terms
         for (int j = 2; j < n; j+=2)
         {
-            area += 8*func(x1+i*xStep, y1+i*yStep);
+            area += 8*func(x1+i*xStep, y1+j*yStep);
         }
 
     }
 
+    // Even x terms
     for (int i = 2; i < n; i+=2)
     {
+        // Sides
         area += 2*func(x1+i*xStep, y1);
         area += 2*func(x1+i*xStep, y2);
         area += 2*func(x1, y1+i*yStep);
         area += 2*func(x2, y1+i*yStep);
 
+        // Odd y terms
         for (int j = 1; j < n; j+=2)
         {
-            area += 8*func(x1+i*xStep, y1+i*yStep);
+            area += 8*func(x1+i*xStep, y1+j*yStep);
         }
 
+        // Even y terms
         for (int j = 2; j < n; j+=2)
         {
-            area += 4*func(x1+i*xStep, y1+i*yStep);
+            area += 4*func(x1+i*xStep, y1+j*yStep);
         }
     }
 
@@ -219,7 +228,7 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 
 /*
 * Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with n samples.
-* Uses the Central Limit Theorem with samples of size 50, thus also handling large values of n.
+* Uses the Central Limit Theorem with samples of size ~50, thus also handling large values of n.
 * 
 *
 * Time Complexity: O(n)
@@ -232,13 +241,13 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 *
 * returns: The approximated value of the integral
 */
-double MonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds, int n)
+double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
     long double workingAverage = 0;
     long double trueAverage = 0;
 
-    int cycles = n % 50 + 1;
+    int cycles = n / 50 + 1;
 
     for (int i = 1; i <= cycles; i++)
     {
@@ -269,23 +278,42 @@ double _haltonSeq(int index, int base){
     return y;
 }
 /*
-* Pre-computes halton sequence values for bases 2 and 3 for use in the Quasi Monte Carlo Integral
+* Pre-computes halton sequence values for bases 2 and 3 for use in the Quasi Monte Carlo Integral.
+*
+* Must be called before use the Quasi Monte Carlo Integral for max effeciency on repeated use.
+*
+* Must be freed with freeHaltons after use.
 */
-void fillHaltons()
+void fillHaltons(int n)
 {
-    haltonsFilled = true;
+    if (haltonSize == n)
+        return;
+
+    haltonSize = n;
+
+    halton2 = (double*)malloc(sizeof(double) * n);
+    halton3 = (double*)malloc(sizeof(double) * n);
+
     for (int i = 0; i < haltonSize; i++)
     {
         halton2[i] = _haltonSeq(i+1, 2);
         halton3[i] = _haltonSeq(i+1, 3);
     }
 }
+
+void freeHaltons()
+{
+    free(halton2);
+    free(halton3);
+    haltonSize = 0;
+}
 /*
 * Performs 2 dimensional numerical integration on the given function using a Quasi Monte Carlo method 
-* selecting n values from the Hatlon sequence. Must ensure that the size of the Halton sequence arrays matches n. 
+* selecting n values from the Hatlon sequence. Must ensure that the size of the Halton sequence arrays matches n if pre-filled. 
 * Uses the Central Limit Theorem with samples of size 50, thus also handling large values of n.
+* It is highly recommended to use fillHaltons before the execution of this algorithm and freeHaltons after for max effeciency.
 * 
-* Time Complexity: O(n) after first call, O(nlog(n)) on first
+* Time Complexity: O(n) after first call with a consistent sample size, O(n^2 * log(n)) on first call with that sample size
 *
 * func: The function of 2 variables to be integrated
 *
@@ -295,17 +323,17 @@ void fillHaltons()
 *
 * returns: The approximated value of the integral
 */
-double QuasiMonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds, int n)
+double QuasiMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
     double xRange = x2-x1, yRange = y2-y1;
     long double workingAverage = 0;
     long double trueAverage = 0;
 
-    if (!haltonsFilled)
-    {
-        fillHaltons();
-    }
+    bool autoFillHaltons = haltonSize == 0;
+    
+    if (autoFillHaltons)
+        fillHaltons(n);
 
 
     int cycles = n % 50 + 1;
@@ -313,33 +341,37 @@ double QuasiMonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds
 
     if (xRange > yRange)
     {
-        for (int i = 0; i < n; i++)
-        {
-            for (int i = 1; i <= cycles; i++)
+        int index = 0;
+        for (int i = 1; i <= cycles; i++)
             {
                 for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
                 {
-                    workingAverage += func(x1+halton2[i]*xRange, y1+halton3[i]*yRange);
+                    workingAverage += func(x1+halton2[index]*xRange, y1+halton3[index]*yRange);
+                    index++;
                 }
 
                 trueAverage += workingAverage /n;
                 workingAverage = 0;
             }
-        }
     }
     else
     {
         for (int i = 1; i <= cycles; i++)
         {
+            int index = 0;
             for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
             {
-                workingAverage += func(x1+halton2[i]*xRange, y1+halton3[i]*yRange);
+                workingAverage += func(x1+halton2[index]*xRange, y1+halton3[index]*yRange);
+                index++;
             }
 
             trueAverage += workingAverage /n;
             workingAverage = 0;
         }
     }
+
+    if (autoFillHaltons)
+        freeHaltons();
 
     return trueAverage * (x2-x1) * (y2-y1);
 }
@@ -356,48 +388,91 @@ double QuasiMonteCarloIntegral(Function2D func, struct SimulatorMathRect* bounds
 *
 * n: The number of samples the integralFunc will use
 *
-* log: Whether or not to log the result
+* rresult: The double ptr to store the result of the integral
 *
 * returns: The time elapsed in milliseconds from before and after the integralFunc is called.
 */
-double _timeFunc(NumericalIntegral integralFunc, Function2D func, struct SimulatorMathRect* bounds, int n, bool log)
+double _timeFunc(NumericalIntegral integralFunc, Function2D func, struct SimulatorMathRect* bounds, int n, double* result)
 {
     clock_t start = clock();
-    double d = integralFunc(func, bounds, n);
+    *result = integralFunc(func, bounds, n);
     clock_t end = clock();
 
-    if (log)
-        _logDouble("Result", d);
-
-    return ((double) (end - start)) / CLOCKS_PER_SEC * pow(10,3);
+    return ((double) (end - start)) / (double)CLOCKS_PER_SEC * pow(10,3);
 }
 
 int main()
 {
     srand((unsigned)time(NULL));
 
-    struct SimulatorMathRect rect = {.x1 = 0, .x2 = 4, .y1 = 0, .y2 = 6};
+    struct SimulatorMathRect rect = {.x1 = -100, .x2 = 100, .y1 = -100, .y2 = 100};
 
-    /*
-    logDouble("Midpoint", MidpointSumIntegral(g, &rect, 10));
+    double output, time;
 
-    logDouble("Trapezoidal", TrapezoidalSumIntegral(g, &rect, 10));
+/*
+    int samples[] = {100, 256, 512, 1024};
+    int a[] = {10, 100, 1000};
+    int b[] = {15, 150, 1500};
 
-    logDouble("Simpsons", SimpsonsIntegral(g, &rect, 10));
+    char str[256]; 
 
-    logDouble("Monte Carlo", MonteCarloIntegral(g, &rect, 10));
+    FILE* file = fopen("TrapezoidalSumData.csv", "w");
 
-    fillHaltons();
+    if (file == NULL)
+        return -1;
 
-    logDouble("Quasi Monte Carlo", QuasiMontiCarloIntegral(g, &rect, haltonSize));
+    fputs("func,samples,boundsType,a,b,time,result\n", file);
 
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                struct SimulatorMathRect b1 = {.x1 = 0, .x2 = a[j], .y1 = 0, .y2 = a[j]}; // 0,a, 0,a
+                struct SimulatorMathRect b2 = {.x1 = 0, .x2 = a[j], .y1 = 0, .y2 = b[k]}; // 0,a 0,b
+                struct SimulatorMathRect b3 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = 0, .y2 = a[j]}; // -a,a 0, a
+                struct SimulatorMathRect b4 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = 0, .y2 = b[k]}; // -a,a 0,b
+                struct SimulatorMathRect b5 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = -1 * a[j], .y2 = a[j]}; // -a,-a a,a
+                struct SimulatorMathRect b6 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = -1 * b[k], .y2 = b[k]}; // -a,a -b,b
+
+                struct SimulatorMathRect boundsArr[] = {b1, b2, b3, b4, b5, b6};
+
+                for (int l = 0; l < 6; l++)
+                {
+                    time = _timeFunc(TrapezoidalSumIntegral2D, f1, &boundsArr[l], samples[i], &output);
+                    sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a[j],b[k],time,output);
+                    fputs(str,file);
+
+                    time = _timeFunc(TrapezoidalSumIntegral2D, f2, &boundsArr[l], samples[i], &output);
+                    sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a[j],b[k],time,output);
+                    fputs(str,file);
+                }
+
+            }
+        }
+    }
+
+    return fclose(file);
     */
+    
+   _logDouble("Midpoint Time",_timeFunc(MidpointSumIntegral2D, f1, &rect, 1000, &output));
+   _logDouble("Result", output);
 
-   _logDouble("Midpoint Time",_timeFunc(MidpointSumIntegral, g, &rect, 1000, true));
-   _logDouble("Trapezoidal Time",_timeFunc(TrapezoidalSumIntegral, g, &rect, 1000, true));
-   _logDouble("Simpsons Time",_timeFunc(SimpsonsIntegral, g, &rect, 1000, true));
-   _logDouble("Monte Carlo Time", _timeFunc(MonteCarloIntegral, g, &rect, 1000 * 1000, true));
-   _logDouble("Quasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral, g, &rect,1000*1000, true));
+   _logDouble("Trapezoidal Time",_timeFunc(TrapezoidalSumIntegral2D, f1, &rect, 1000, &output));
+   _logDouble("Result", output);
+
+   _logDouble("Simpsons Time",_timeFunc(SimpsonsIntegral2D, f1, &rect, 1000, &output));
+   _logDouble("Result", output);
+
+   _logDouble("Monte Carlo Time", _timeFunc(MonteCarloIntegral2D, f1, &rect, 1000 * 1000, &output));
+   _logDouble("Result", output);
+
+   _logDouble("Quasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral2D, f1, &rect,1000*1000, &output));
+   _logDouble("Result", output);
 
     return 0;
+    
+
+
 }
