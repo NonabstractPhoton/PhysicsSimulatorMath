@@ -409,14 +409,14 @@ int main()
 
     double output, time;
 
-/*
-    int samples[] = {100, 256, 512, 1024};
+    
+    int samples[] = {256, 512, 1024, 2048};
     int a[] = {10, 100, 1000};
     int b[] = {15, 150, 1500};
 
     char str[256]; 
 
-    FILE* file = fopen("TrapezoidalSumData.csv", "w");
+    FILE* file = fopen("QuasiMonteCarloData.csv", "w");
 
     if (file == NULL)
         return -1;
@@ -425,6 +425,7 @@ int main()
 
     for (int i = 0; i < 4; i++)
     {
+        fillHaltons(samples[i]);
         for (int j = 0; j < 3; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -440,22 +441,24 @@ int main()
 
                 for (int l = 0; l < 6; l++)
                 {
-                    time = _timeFunc(TrapezoidalSumIntegral2D, f1, &boundsArr[l], samples[i], &output);
+                    time = _timeFunc(QuasiMonteCarloIntegral2D, f1, &boundsArr[l], samples[i], &output);
                     sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a[j],b[k],time,output);
                     fputs(str,file);
 
-                    time = _timeFunc(TrapezoidalSumIntegral2D, f2, &boundsArr[l], samples[i], &output);
+                    time = _timeFunc(QuasiMonteCarloIntegral2D, f2, &boundsArr[l], samples[i], &output);
                     sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a[j],b[k],time,output);
                     fputs(str,file);
                 }
 
             }
         }
+        freeHaltons();
     }
 
     return fclose(file);
-    */
     
+    
+    /*
    _logDouble("\nMidpoint Time",_timeFunc(MidpointSumIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
@@ -472,6 +475,7 @@ int main()
    _logDouble("\nQuasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral2D, f1, &rect,1000*1000, &output));
     freeHaltons();
    _logDouble("Result", output);
+   */
 
     return 0;
     
