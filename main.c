@@ -7,7 +7,7 @@ char buffer[250];
 // Monte Carlo vars
 
 int precision = 100;
-double maxStdDev = 1.5;
+double maxStdDev = 3;
 
 // Quasi Monte Carlo Halton Sequence vars
 double* halton2 = NULL;
@@ -244,8 +244,8 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
-    long double workingAverage = 0;
-    long double trueAverage = 0;
+    double workingAverage = 0;
+    double trueAverage = 0;
 
     int cycles = n / 50 + 1;
 
@@ -254,10 +254,10 @@ double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, i
     {
         for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
         {
-            workingAverage += func(_genGaussRand(x1, x2, precision, maxStdDev), _genGaussRand(y1, y2, precision, maxStdDev));
+            workingAverage += func(_genGaussRand(x1, x2, precision, maxStdDev), _genGaussRand(y1,y2,precision,maxStdDev));
         }
 
-        trueAverage += workingAverage / n;
+        trueAverage += workingAverage /n;
         workingAverage = 0;
     }
 
@@ -328,8 +328,8 @@ double QuasiMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* boun
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
     double xRange = x2-x1, yRange = y2-y1;
-    long double workingAverage = 0;
-    long double trueAverage = 0;
+    double workingAverage = 0;
+    double trueAverage = 0;
 
     bool autoFillHaltons = haltonSize == 0;
     
@@ -456,19 +456,21 @@ int main()
     return fclose(file);
     */
     
-   _logDouble("Midpoint Time",_timeFunc(MidpointSumIntegral2D, f1, &rect, 1000, &output));
+   _logDouble("\nMidpoint Time",_timeFunc(MidpointSumIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
-   _logDouble("Trapezoidal Time",_timeFunc(TrapezoidalSumIntegral2D, f1, &rect, 1000, &output));
+   _logDouble("\nTrapezoidal Time",_timeFunc(TrapezoidalSumIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
-   _logDouble("Simpsons Time",_timeFunc(SimpsonsIntegral2D, f1, &rect, 1000, &output));
+   _logDouble("\nSimpsons Time",_timeFunc(SimpsonsIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
-   _logDouble("Monte Carlo Time", _timeFunc(MonteCarloIntegral2D, f1, &rect, 1000 * 1000, &output));
+   _logDouble("\nMonte Carlo Time", _timeFunc(MonteCarloIntegral2D, f1, &rect, 1000 * 1000, &output));
    _logDouble("Result", output);
 
-   _logDouble("Quasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral2D, f1, &rect,1000*1000, &output));
+    fillHaltons(1000*1000);
+   _logDouble("\nQuasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral2D, f1, &rect,1000*1000, &output));
+    freeHaltons();
    _logDouble("Result", output);
 
     return 0;
