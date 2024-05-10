@@ -249,6 +249,7 @@ double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, i
 
     int cycles = n / 50 + 1;
 
+
     for (int i = 1; i <= cycles; i++)
     {
         for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
@@ -336,32 +337,31 @@ double QuasiMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* boun
         fillHaltons(n);
 
 
-    int cycles = n % 50 + 1;
+    int cycles = n / 50 + 1;
     
+    int index = 0;
 
     if (xRange > yRange)
     {
-        int index = 0;
         for (int i = 1; i <= cycles; i++)
+        {
+            for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
             {
-                for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
-                {
-                    workingAverage += func(x1+halton2[index]*xRange, y1+halton3[index]*yRange);
-                    index++;
-                }
-
-                trueAverage += workingAverage /n;
-                workingAverage = 0;
+                workingAverage += func(x1+halton2[index]*xRange, y1+halton3[index]*yRange);
+                index++;
             }
+
+            trueAverage += workingAverage /n;
+            workingAverage = 0;
+        }
     }
     else
     {
         for (int i = 1; i <= cycles; i++)
-        {
-            int index = 0;
+        { 
             for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
             {
-                workingAverage += func(x1+halton2[index]*xRange, y1+halton3[index]*yRange);
+                workingAverage += func(x1+halton3[index]*xRange, y1+halton2[index]*yRange);
                 index++;
             }
 
@@ -373,7 +373,7 @@ double QuasiMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* boun
     if (autoFillHaltons)
         freeHaltons();
 
-    return trueAverage * (x2-x1) * (y2-y1);
+    return trueAverage * xRange * yRange;
 }
 
 
@@ -473,6 +473,4 @@ int main()
 
     return 0;
     
-
-
 }
