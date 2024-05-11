@@ -254,7 +254,7 @@ double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, i
     {
         for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
         {
-            workingAverage += func(_genGaussRand(x1, x2, precision, maxStdDev), _genGaussRand(y1,y2,precision,maxStdDev));
+            workingAverage += func(_genGaussRand(x1, x2, precision, maxStdDev), _genGaussRand(y1, y2, precision, maxStdDev));
         }
 
         trueAverage += workingAverage /n;
