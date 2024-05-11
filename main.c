@@ -6,8 +6,8 @@ char buffer[250];
 
 // Monte Carlo vars
 
-int precision = 100;
-double maxStdDev = 3;
+int precision = 1000;
+double maxStdDev = 2.5;
 
 // Quasi Monte Carlo Halton Sequence vars
 double* halton2 = NULL;
@@ -416,7 +416,7 @@ int main()
 
     char str[256]; 
 
-    FILE* file = fopen("QuasiMonteCarloData.csv", "w");
+    FILE* file = fopen("MonteCarloData.csv", "w");
 
     if (file == NULL)
         return -1;
@@ -425,7 +425,6 @@ int main()
 
     for (int i = 0; i < 4; i++)
     {
-        fillHaltons(samples[i]);
         for (int j = 0; j < 3; j++)
         {
             for (int k = 0; k < 3; k++)
@@ -441,18 +440,17 @@ int main()
 
                 for (int l = 0; l < 6; l++)
                 {
-                    time = _timeFunc(QuasiMonteCarloIntegral2D, f1, &boundsArr[l], samples[i], &output);
+                    time = _timeFunc(MonteCarloIntegral2D, f1, &boundsArr[l], samples[i], &output);
                     sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a[j],b[k],time,output);
                     fputs(str,file);
 
-                    time = _timeFunc(QuasiMonteCarloIntegral2D, f2, &boundsArr[l], samples[i], &output);
+                    time = _timeFunc(MonteCarloIntegral2D, f2, &boundsArr[l], samples[i], &output);
                     sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a[j],b[k],time,output);
                     fputs(str,file);
                 }
 
             }
         }
-        freeHaltons();
     }
 
     return fclose(file);
