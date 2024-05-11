@@ -7,7 +7,6 @@ char buffer[250];
 // Monte Carlo vars
 
 int precision = 1000;
-double maxStdDev = 2.5;
 
 // Quasi Monte Carlo Halton Sequence vars
 double* halton2 = NULL;
@@ -227,8 +226,8 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 }
 
 /*
-* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with n samples.
-* Uses the Central Limit Theorem with samples of size ~50, thus also handling large values of n.
+* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with a limited gaussian probability distribution.
+* Uses the Central Limit Theorem with n samples of size 100 to approximate true mean result.
 * 
 *
 * Time Complexity: O(n)
@@ -245,23 +244,23 @@ double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, i
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
     double workingAverage = 0;
-    double trueAverage = 0;
+    long double trueAverage = 0;
 
-    int cycles = n / 50 + 1;
+    double maxStdDev = (2.5 + log(n)) / 2;
 
 
-    for (int i = 1; i <= cycles; i++)
+    for (int i = 0; i < n; i++)
     {
-        for (int j = (i-1)*n/cycles; j < i*n/cycles; j++)
+        for (int j = 0; j < 100; j++)
         {
             workingAverage += func(_genGaussRand(x1, x2, precision, maxStdDev), _genGaussRand(y1, y2, precision, maxStdDev));
         }
 
-        trueAverage += workingAverage /n;
+        trueAverage += workingAverage / 100;
         workingAverage = 0;
     }
 
-    return trueAverage * (x2-x1) * (y2-y1);
+    return trueAverage / n * (x2-x1) * (y2-y1);
 }
 /*
 * Computes the value at a given index for the halton sequence of the provided base
@@ -314,7 +313,7 @@ void freeHaltons()
 * Uses the Central Limit Theorem with samples of size 50, thus also handling large values of n.
 * It is highly recommended to use fillHaltons before the execution of this algorithm and freeHaltons after for max effeciency.
 * 
-* Time Complexity: O(n) after first call with a consistent sample size, O(n^2 * log(n)) on first call with that sample size
+* Time Complexity: O(n) if fillHaltons is properly called, O(n^2 log(n)) otherwise
 *
 * func: The function of 2 variables to be integrated
 *
@@ -405,11 +404,12 @@ int main()
 {
     srand((unsigned)time(NULL));
 
-    struct SimulatorMathRect rect = {.x1 = -100, .x2 = 100, .y1 = -100, .y2 = 100};
+    struct SimulatorMathRect rect = {.x1 = -10, .x2 = 10, .y1 = -10, .y2 = 10};
 
     double output, time;
 
     
+
     int samples[] = {256, 512, 1024, 2048};
     int a[] = {10, 100, 1000};
     int b[] = {15, 150, 1500};
@@ -456,7 +456,9 @@ int main()
     return fclose(file);
     
     
+    
     /*
+    
    _logDouble("\nMidpoint Time",_timeFunc(MidpointSumIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
@@ -466,14 +468,15 @@ int main()
    _logDouble("\nSimpsons Time",_timeFunc(SimpsonsIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
-   _logDouble("\nMonte Carlo Time", _timeFunc(MonteCarloIntegral2D, f1, &rect, 1000 * 1000, &output));
+   _logDouble("\nMonte Carlo Time", _timeFunc(MonteCarloIntegral2D, f1, &rect, 1000, &output));
    _logDouble("Result", output);
 
     fillHaltons(1000*1000);
    _logDouble("\nQuasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral2D, f1, &rect,1000*1000, &output));
     freeHaltons();
    _logDouble("Result", output);
-   */
+
+    */
 
     return 0;
     
