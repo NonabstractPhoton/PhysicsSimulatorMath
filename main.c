@@ -225,8 +225,13 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 
 }
 
+double _genPseudoRand(double lower, double upper, int precision)
+{
+    return lower + (rand() % (int)(precision * (upper - lower + 1)))/precision;
+}
+
 /*
-* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with a limited gaussian probability distribution.
+* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with a modified gaussian probability distribution.
 * Uses the Central Limit Theorem with n samples of size 100 to approximate true mean result.
 * 
 *
@@ -240,13 +245,13 @@ double _genGaussRand(double lower, double upper, int precision, double maxStdDev
 *
 * returns: The approximated value of the integral
 */
-double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+double GaussianMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
 {
     double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
     double workingAverage = 0;
     long double trueAverage = 0;
 
-    double maxStdDev = (2.5 + log(n)) / 2;
+    double maxStdDev = (3 + log(n))/2;
 
 
     for (int i = 0; i < n; i++)
@@ -262,6 +267,43 @@ double MonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, i
 
     return trueAverage / n * (x2-x1) * (y2-y1);
 }
+
+/*
+* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with a pseudo-random probability distribution.
+* Uses the Central Limit Theorem with n samples of size 100 to approximate true mean result.
+* 
+*
+* Time Complexity: O(n)
+*
+* func: The function of 2 variables to be integrated
+*
+* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
+*
+* n: The amount of rectnagles to be used
+*
+* returns: The approximated value of the integral
+*/
+double PsuedoRandMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+{
+    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    double workingAverage = 0;
+    long double trueAverage = 0;
+
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < 100; j++)
+        {
+            workingAverage += func(_genPseudoRand(x1, x2, precision), _genPseudoRand(y1, y2, precision));
+        }
+
+        trueAverage += workingAverage / 100;
+        workingAverage = 0;
+    }
+
+    return trueAverage / n * (x2-x1) * (y2-y1);
+}
+
 /*
 * Computes the value at a given index for the halton sequence of the provided base
 */
@@ -416,7 +458,7 @@ int main()
 
     char str[256]; 
 
-    FILE* file = fopen("MonteCarloData.csv", "w");
+    FILE* file = fopen("PsuedoRandMonteCarloData.csv", "w");
 
     if (file == NULL)
         return -1;
@@ -440,11 +482,11 @@ int main()
 
                 for (int l = 0; l < 6; l++)
                 {
-                    time = _timeFunc(MonteCarloIntegral2D, f1, &boundsArr[l], samples[i], &output);
+                    time = _timeFunc(PsuedoRandMonteCarloIntegral2D, f1, &boundsArr[l], samples[i], &output);
                     sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a[j],b[k],time,output);
                     fputs(str,file);
 
-                    time = _timeFunc(MonteCarloIntegral2D, f2, &boundsArr[l], samples[i], &output);
+                    time = _timeFunc(PsuedoRandMonteCarloIntegral2D, f2, &boundsArr[l], samples[i], &output);
                     sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a[j],b[k],time,output);
                     fputs(str,file);
                 }
