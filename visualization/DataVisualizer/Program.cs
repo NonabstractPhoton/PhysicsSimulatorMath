@@ -1,5 +1,7 @@
 ﻿using ScottPlot;
+using ScottPlot.LegendLayouts;
 using ScottPlot.TickGenerators;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -12,13 +14,13 @@ namespace DataVisualizer
             string pathToData = Path.GetFullPath("../../../../../data/");
 
             string[] approxFileNames = 
-            { 
+            {
+                "MidpointSumData.csv",
+                "SimpsonsRuleData.csv",
+                "TrapezoidalSumData.csv",
                 "GaussianMonteCarloData.csv", 
                 "PsuedoRandMonteCarloData.csv", 
-                "QuasiMonteCarloData.csv", 
-                "MidpointSumData.csv", 
-                "SimpsonsRuleData.csv", 
-                "TrapezoidalSumData.csv" 
+                "QuasiMonteCarloData.csv"
             };
 
             string valueFileName = "TrueValues.csv";
@@ -43,7 +45,7 @@ namespace DataVisualizer
 
             foreach (string fileName in approxFileNames)
             {
-                approxDatas.Add(new List<ApproximationData>(432));
+                approxDatas.Add(new List<ApproximationData>(288));
 
                 using (StreamReader reader = File.OpenText(pathToData + fileName))
                 {
@@ -63,12 +65,15 @@ namespace DataVisualizer
             for (int i = 0; i < approxDatas.Count; i++)
             {
                 for (int j = 0; j < approxDatas[i].Count; j++)
-                {
-                    approxDatas[i][j].error = approxDatas[i][j].result - trueValues.Where
+                { 
+                    var trueVal = trueValues.Where
                     (
                         (data) => data.integralData == approxDatas[i][j].integralData
                     )
                     .First().result;
+
+
+                    approxDatas[i][j].error = (approxDatas[i][j].result - trueVal) / trueVal * 100;
                 }
             }
 
@@ -78,9 +83,7 @@ namespace DataVisualizer
                 Plot pTimes = new();
                 Plot pErrors = new();
 
-                List<List<int>> xsList = new();
-                List<List<double>> ysTimesList = new();
-                List<List<double>> ysErrorsList = new();
+                List<List<ApproximationData>> dataList = new();
 
                 var func1Set = approxDatas[i].Where((data) => data.integralData.func == 1).ToList();
                 var func2Set = approxDatas[i].Where((data) => data.integralData.func == 2).ToList();
@@ -91,51 +94,105 @@ namespace DataVisualizer
                     var func1Subset = func1Set.Where((data) => data.integralData.boundsType == j + 1).ToList();
                     var func2Subset = func2Set.Where((data) => data.integralData.boundsType == j + 1).ToList();
 
-                    for (int alog = 4; alog > 0; alog/=2)
+                    // TODO USE func2Subgset
+
+                    for (int alog = 4; alog > 0; alog /= 2)
                     {
                         for (int blog = 64; blog >= 8; blog /= 2)
                         {
                             IntegralData.ABMarker marker = (IntegralData.ABMarker)alog | (IntegralData.ABMarker)blog;
 
-                            var lineSet = func1Subset.Where((data) => data.integralData.abMarker == marker);
+                            var lineSet = func1Subset.Where((data) => data.integralData.abMarker == marker);                            
 
-                            xsList.Add(lineSet.Select((data) => data.samples).ToList());
-                            ysTimesList.Add(lineSet.Select((data) => data.time).ToList());
-                            ysErrorsList.Add(lineSet.Select((data) => data.error).ToList());
+                            if (lineSet.Count() == 0)
+                            {
+                                continue;
+                            }
+
+                            dataList.Add(lineSet.ToList());
                         }
                     }
 
                 }
+
+                var sortedByTimes = dataList.OrderBy((data) => data.Select((innerData) => innerData.time).Average()).ToList();
+                var sortedByErrors = dataList.OrderBy((data) => data.Select((innerData) => innerData.error).Average()).ToList();
 
                 var timeTitle = approxFileNames[i][0..^4] + " Times";
                 var errorTitle = approxFileNames[i][0..^4] + " Errors";
 
                 pTimes.Title(timeTitle);
                 pErrors.Title(errorTitle);
-                
+
                 pTimes.XLabel("Samples");
                 pErrors.XLabel("Samples");
 
                 pTimes.YLabel("Time (Milliseconds)");
-                pErrors.YLabel("Error");
+                pErrors.YLabel("Error (%)");
 
-                int listIndex = 0;
-                foreach (var xList in xsList)
+                for (index = 0; index < dataList.Count()/2; index++)
                 {
-                    pTimes.Add.Scatter(xList, ysTimesList[listIndex]);
-                    pErrors.Add.Scatter(xList, ysErrorsList[listIndex]);
-                    listIndex++;
+                    var timesSamplesLower = sortedByTimes[index].Select((data) => data.samples).ToList();
+                    var timesSamplesUpper = sortedByTimes[^(index + 1)].Select((data) => data.samples).ToList();
+
+                    var timesLower = sortedByTimes[index].Select((data) => data.time).ToList();
+                    var timesUpper = sortedByTimes[^(index + 1)].Select((data) => data.time).ToList();
+
+                    var errorsSamplesLower = sortedByErrors[index].Select((data) => data.samples).ToList();
+                    var errorsSamplesUpper = sortedByErrors[^(index + 1)].Select((data) => data.samples).ToList();
+
+                    var errorsLower = sortedByErrors[index].Select((data) => data.error).ToList();
+                    var errorsUpper = sortedByErrors[^(index + 1)].Select((data) => data.error).ToList();
+
+                    var timePlotLowerData = sortedByTimes[index].First().integralData;
+                    var timePlotUpperData = sortedByTimes[^(index + 1)].First().integralData;
+
+                    var errorPlotLowerData = sortedByErrors[index].First().integralData;
+                    var errorPlotUpperData = sortedByErrors[^(index + 1)].First().integralData;
+
+
+                    var timePlotLower = pTimes.Add.Scatter(timesSamplesLower, timesLower);
+                    var timePlotUpper = pTimes.Add.Scatter(timesSamplesUpper, timesLower);
+
+                    var errorPlotLower = pErrors.Add.Scatter(errorsSamplesLower, errorsLower);
+                    var errorPlotUpper = pErrors.Add.Scatter(errorsSamplesUpper, errorsLower);
+
+                    if (index < 5)
+                    {
+                        timePlotLower.LegendText = $"Bounds: Type {timePlotLowerData.boundsType}, {timePlotLowerData.abMarker}";
+                        timePlotUpper.LegendText = $"Bounds: Type {timePlotUpperData.boundsType}, {timePlotUpperData.abMarker}";
+
+                        errorPlotLower.LegendText = $"Bounds: Type {errorPlotLowerData.boundsType}, {errorPlotLowerData.abMarker}";
+                        errorPlotUpper.LegendText = $"Bounds: Type {errorPlotUpperData.boundsType}, {errorPlotUpperData.abMarker}";
+                    }
                 }
 
-                pTimes.SavePng(timeTitle+ ".png", 800, 450);
-                pErrors.SavePng(errorTitle+ ".png", 800, 450);
+                pTimes.Legend.IsVisible = false;
+                pErrors.Legend.IsVisible = false;
+
+                ScottPlot.Panels.LegendPanel timePanel = new(pTimes.Legend)
+                {
+                    Edge = Edge.Right,
+                    Alignment = Alignment.UpperCenter
+                };
+                ScottPlot.Panels.LegendPanel errorPanel = new(pErrors.Legend)
+                {
+                    Edge = Edge.Right,
+                    Alignment = Alignment.UpperCenter
+                };
+
+                pTimes.Axes.AddPanel(timePanel);
+                pErrors.Axes.AddPanel(errorPanel);
+
+                pTimes.SavePng(timeTitle+ ".png", 1920, 1080);
+                pErrors.SavePng(errorTitle+ ".png", 1920, 1080);
 
             }
             // TODO - Add Regression
         }
     }
 
-    struct IntegralData
+    class IntegralData
     {
         public short func, boundsType, a, b;
 
@@ -196,12 +253,16 @@ namespace DataVisualizer
         public ApproximationData(string rawData)
         {
             var data = rawData.Split(",");
+
+            short boundsType = short.Parse(data[2]);
             short b = 0;
 
-            if (short.Parse(data[2]) % 2 == 0)
-                 b = short.Parse(data[4]);
+            // If b matters
+            if (boundsType % 2 == 0)
+                b = short.Parse(data[4]);
 
-            integralData = new IntegralData(short.Parse(data[0]), short.Parse(data[2]), short.Parse(data[3]), b);
+
+            integralData = new IntegralData(short.Parse(data[0]), boundsType, short.Parse(data[3]), b);
 
             samples = int.Parse(data[1]);
             time = double.Parse(data[5]);
