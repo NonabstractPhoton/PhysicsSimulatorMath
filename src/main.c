@@ -449,22 +449,31 @@ int main()
 
     double output, time;
 
-    int functionTestSamples = 30;
+    // int samples[] = {256, 512, 1024, 2048};
 
-    int samples[] = {256, 512, 1024, 2048};
-    int a[] = {10, 100, 1000};
-    int b[] = {15, 150, 1500};
+    int samples[33];
+
+    for (int i = 0; i <= 32; i++)
+    {
+        samples[i] = 32 * i + 1024;
+    }
+
+    // int a[] = {10, 100, 1000};
+    // int b[] = {15, 150, 1500};
+
+    int a = 100, b = 150;
 
     char str[256]; 
 
-    FILE* file = fopen("TrapezoidalSumData.csv", "w");
+    FILE* file = fopen("data/SimpsonsRuleDataDetailed.csv", "w");
 
     if (file == NULL)
         return -1;
 
     fputs("func,samples,boundsType,a,b,time,result\n", file);
 
-    for (int i = 0; i < 4; i++)
+    /*
+    for (int i = 0; i < 1024; i++)
     {
         for (int j = 0; j < 3; j++)
         {
@@ -497,6 +506,30 @@ int main()
                 }
 
             }
+        }
+    }
+
+    */
+
+    struct SimulatorMathRect b1 = {.x1 = 0, .x2 = a, .y1 = 0, .y2 = a}; // 0,a, 0,a
+    struct SimulatorMathRect b2 = {.x1 = 0, .x2 = a, .y1 = 0, .y2 = b}; // 0,a 0,b
+    struct SimulatorMathRect b3 = {.x1 = -1 * a, .x2 = a, .y1 = 0, .y2 = a}; // -a,a 0, a
+    struct SimulatorMathRect b4 = {.x1 = -1 * a, .x2 = a, .y1 = 0, .y2 = b}; // -a,a 0,b
+    struct SimulatorMathRect b5 = {.x1 = -1 * a, .x2 = a, .y1 = -1 * a, .y2 = a}; // -a,-a a,a
+    struct SimulatorMathRect b6 = {.x1 = -1 * a, .x2 = a, .y1 = -1 * b, .y2 = b}; // -a,a -b,b
+    struct SimulatorMathRect boundsArr[] = {b1, b2, b3, b4, b5, b6};
+
+   for (int i = 0; i < 33; i++)
+    {
+        for (int l = 0; l < 6; l++)
+        {
+            time = _timeFunc(SimpsonsIntegral2D, f1, &boundsArr[l], samples[i], &output); 
+            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a,b,time,output);
+            fputs(str,file);
+            
+            time = _timeFunc(SimpsonsIntegral2D, f2, &boundsArr[l], samples[i], &output); 
+            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a,b,time,output);
+            fputs(str,file);
         }
     }
 
