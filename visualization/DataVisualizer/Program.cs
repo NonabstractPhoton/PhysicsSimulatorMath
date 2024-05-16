@@ -12,60 +12,98 @@ namespace DataVisualizer
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
+            GenerateDetailedGraphs(pathToData);
 
-            string[] approxFileNames = 
+        }
+
+        static void GenerateDetailedGraphs(string pathToData)
+        {
+            string[] approxFileNames =
+            {
+                "MidpointSumDataDetailed.csv",
+                "SimpsonsRuleDataDetailed.csv",
+                "TrapezoidalSumDataDetailed.csv"
+            };
+
+            string valueFileName = "TrueValues.csv";
+
+            List<TrueValueData> trueValues = loadTrueData(pathToData, valueFileName, 72);
+
+            List<List<ApproximationData>> approxDatas = loadApproxData(pathToData, approxFileNames, 396);
+
+            for (int i = 0; i < approxFileNames.Length; i++)
+            {
+                foreach (ApproximationData dataObj in approxDatas[i])
+                {
+                    var trueVal = trueValues.Where((data) => data.integralData == dataObj.integralData).First().result;
+                    dataObj.error = (dataObj.result - trueVal) / trueVal * 100;
+                }
+            }
+
+
+
+            for (int i = 0;i < approxFileNames.Length;i++) 
+            {
+                Plot pErrors = new(), pTimes = new();
+
+                var timeTitle = $"{approxFileNames[i][0..^4]} Times";
+                var errorTitle = $"{approxFileNames[i][0..^4]} Errors";
+
+                pTimes.Title(timeTitle);
+                pErrors.Title(errorTitle);
+
+                pTimes.XLabel("Samples");
+                pErrors.XLabel("Samples");
+
+                pTimes.YLabel("Time (milliseconds)");
+                pErrors.YLabel("Error (%)");
+
+                for (int boundsType = 1; boundsType <= 6; boundsType++)
+                {
+                    for (int func = 1; func <=2; func++)
+                    {
+                        var lineSet = approxDatas[i].Where((data) => data.integralData.boundsType == boundsType && data.integralData.func == func);
+                        var xs = lineSet.Select(data => data.samples).ToList();
+                        var yTimes = lineSet.Select(data => data.time).ToList();
+                        var yErrors = lineSet.Select(data => data.error).ToList();
+
+                        var timePlot = pTimes.Add.Scatter(xs, yTimes);
+                        var errorPlot = pErrors.Add.Scatter(xs, yErrors);
+
+                        timePlot.LegendText = $"Func: {func}, Bounds: {boundsType}";
+                        errorPlot.LegendText = $"Func: {func}, Bounds: {boundsType}";
+                    }
+                }
+
+                pTimes.SavePng($"{timeTitle}.png", 1920, 1080);
+                pErrors.SavePng($"{errorTitle}.png", 1920, 1080);
+            }
+        }
+
+        static void GenerateNormalGraphs(string pathToData)
+        {
+            string[] approxFileNames =
             {
                 "MidpointSumData.csv",
                 "SimpsonsRuleData.csv",
                 "TrapezoidalSumData.csv",
-                "GaussianMonteCarloData.csv", 
-                "PsuedoRandMonteCarloData.csv", 
+                "GaussianMonteCarloData.csv",
+                "PsuedoRandMonteCarloData.csv",
                 "QuasiMonteCarloData.csv"
             };
 
             string valueFileName = "TrueValues.csv";
-            
-            List<TrueValueData> trueValues = new List<TrueValueData>(72);
 
-            using (StreamReader reader = File.OpenText(pathToData+valueFileName))
-            {
-                string? line;
+            List<TrueValueData> trueValues = loadTrueData(pathToData, valueFileName, 72);
 
-                reader.ReadLine();
+            List<List<ApproximationData>> approxDatas = loadApproxData(pathToData, approxFileNames, 288);
 
-                while ((line = reader.ReadLine()) != null)
-                {
-                    trueValues.Add(new TrueValueData(line));
-                }
-            }
 
-            List<List<ApproximationData>> approxDatas = new List<List<ApproximationData>>(6);
-
-            int index = 0;
-
-            foreach (string fileName in approxFileNames)
-            {
-                approxDatas.Add(new List<ApproximationData>(288));
-
-                using (StreamReader reader = File.OpenText(pathToData + fileName))
-                {
-                    reader.ReadLine();
-
-                    string? line;
-
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        approxDatas[index].Add(new ApproximationData(line));
-                    }
-                }
-
-                index++;
-            }
 
             for (int i = 0; i < approxDatas.Count; i++)
             {
                 for (int j = 0; j < approxDatas[i].Count; j++)
-                { 
+                {
                     var trueVal = trueValues.Where
                     (
                         (data) => data.integralData == approxDatas[i][j].integralData
@@ -76,6 +114,8 @@ namespace DataVisualizer
                     approxDatas[i][j].error = (approxDatas[i][j].result - trueVal) / trueVal * 100;
                 }
             }
+
+            List<PerformanceSummary> summary = new(approxFileNames.Length);
 
             // Types
             for (int i = 0; i < approxFileNames.Length; i++)
@@ -89,12 +129,10 @@ namespace DataVisualizer
                 var func2Set = approxDatas[i].Where((data) => data.integralData.func == 2).ToList();
 
                 // Bounds
-                for (int j = 0; j < 6; j++)
+                for (int j = 1; j <= 6; j++)
                 {
-                    var func1Subset = func1Set.Where((data) => data.integralData.boundsType == j + 1).ToList();
-                    var func2Subset = func2Set.Where((data) => data.integralData.boundsType == j + 1).ToList();
-
-                    // TODO USE func2Subgset
+                    var func1Subset = func1Set.Where((data) => data.integralData.boundsType == j).ToList();
+                    var func2Subset = func2Set.Where((data) => data.integralData.boundsType == j).ToList();
 
                     for (int alog = 4; alog > 0; alog /= 2)
                     {
@@ -102,17 +140,33 @@ namespace DataVisualizer
                         {
                             IntegralData.ABMarker marker = (IntegralData.ABMarker)alog | (IntegralData.ABMarker)blog;
 
-                            var lineSet = func1Subset.Where((data) => data.integralData.abMarker == marker);                            
+                            var lineSet1 = func1Subset.Where((data) => data.integralData.abMarker == marker);
+                            var lineSet2 = func2Subset.Where((data) => data.integralData.abMarker == marker);
 
-                            if (lineSet.Count() == 0)
+                            if (lineSet1.Count() == 0)
                             {
                                 continue;
                             }
 
-                            dataList.Add(lineSet.ToList());
+                            dataList.Add(lineSet1.ToList());
+                            dataList.Add(lineSet2.ToList());
                         }
                     }
 
+                }
+
+                summary.Add(new PerformanceSummary() { typeIndex = i, data = new() });
+
+                for (int samples = 256; samples <= 2048; samples *= 2)
+                {
+                    var dataOfSamples = approxDatas[i].Where((data) => data.samples == samples);
+
+                    summary[i].data.Add
+                    ((
+                        samples,
+                        dataOfSamples.Select((data) => data.time).Average(),
+                        dataOfSamples.Select((data) => data.error).Average()
+                    ));
                 }
 
                 var sortedByTimes = dataList.OrderBy((data) => data.Select((innerData) => innerData.time).Average()).ToList();
@@ -127,10 +181,10 @@ namespace DataVisualizer
                 pTimes.XLabel("Samples");
                 pErrors.XLabel("Samples");
 
-                pTimes.YLabel("Time (Milliseconds)");
+                pTimes.YLabel("Time (milliseconds)");
                 pErrors.YLabel("Error (%)");
 
-                for (index = 0; index < dataList.Count()/2; index++)
+                for (int index = 0; index < dataList.Count() / 2; index++)
                 {
                     var timesSamplesLower = sortedByTimes[index].Select((data) => data.samples).ToList();
                     var timesSamplesUpper = sortedByTimes[^(index + 1)].Select((data) => data.samples).ToList();
@@ -159,11 +213,11 @@ namespace DataVisualizer
 
                     if (index < 5)
                     {
-                        timePlotLower.LegendText = $"Bounds: Type {timePlotLowerData.boundsType}, {timePlotLowerData.abMarker}";
-                        timePlotUpper.LegendText = $"Bounds: Type {timePlotUpperData.boundsType}, {timePlotUpperData.abMarker}";
+                        timePlotLower.LegendText = $"Func: {timePlotLowerData.func}, Bounds: Type {timePlotLowerData.boundsType}, {timePlotLowerData.abMarker}";
+                        timePlotUpper.LegendText = $"Func: {timePlotUpperData.func}, Bounds: Type {timePlotUpperData.boundsType}, {timePlotUpperData.abMarker}";
 
-                        errorPlotLower.LegendText = $"Bounds: Type {errorPlotLowerData.boundsType}, {errorPlotLowerData.abMarker}";
-                        errorPlotUpper.LegendText = $"Bounds: Type {errorPlotUpperData.boundsType}, {errorPlotUpperData.abMarker}";
+                        errorPlotLower.LegendText = $"Func: {errorPlotLowerData.func}, Bounds: Type {errorPlotLowerData.boundsType}, {errorPlotLowerData.abMarker}";
+                        errorPlotUpper.LegendText = $"Func: {errorPlotUpperData.func}, Bounds: Type {errorPlotUpperData.boundsType}, {errorPlotUpperData.abMarker}";
                     }
                 }
 
@@ -184,11 +238,86 @@ namespace DataVisualizer
                 pTimes.Axes.AddPanel(timePanel);
                 pErrors.Axes.AddPanel(errorPanel);
 
-                pTimes.SavePng(timeTitle+ ".png", 1920, 1080);
-                pErrors.SavePng(errorTitle+ ".png", 1920, 1080);
+                pTimes.SavePng(timeTitle + ".png", 1920, 1080);
+                pErrors.SavePng(errorTitle + ".png", 1920, 1080);
 
             }
             // TODO - Add Regression
+
+            Plot avgErrorsComparisons = new();
+            Plot avgTimesComparisons = new();
+
+            for (int i = 0; i < approxFileNames.Length; i++)
+            {
+                var xs = summary[i].data.Select((triple) => (double)triple.Item1).ToList();
+
+                var yTimes = summary[i].data.Select((triple) => triple.Item2).ToList();
+                var timeInfo = avgTimesComparisons.Add.Scatter(xs, yTimes);
+                timeInfo.LegendText = approxFileNames[i][0..^4];
+
+
+                if (i != 3)
+                {
+                    var yErrors = summary[i].data.Select((triple) => triple.Item3).ToList();
+                    var errorInfo = avgErrorsComparisons.Add.Scatter(xs, yErrors);
+                    errorInfo.LegendText = approxFileNames[i][0..^4];
+                }
+            }
+
+            avgTimesComparisons.Title("Average Times");
+            avgErrorsComparisons.Title("Average Errors");
+
+            avgTimesComparisons.XLabel("Samples");
+            avgErrorsComparisons.XLabel("Samples");
+
+            avgTimesComparisons.YLabel("Time (milliseconds)");
+            avgErrorsComparisons.YLabel("Error (%)");
+
+            avgTimesComparisons.SavePng("Average Times.png", 1920, 1080);
+            avgErrorsComparisons.SavePng("Average Errors.png", 1920, 1080);
+        }
+
+        static List<TrueValueData> loadTrueData(string pathToData, string valueFileName, int lines)
+        {
+            List<TrueValueData> trueValues = new List<TrueValueData>(72);
+
+            using (StreamReader reader = File.OpenText(pathToData + valueFileName))
+            {
+                string? line;
+
+                reader.ReadLine();
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    trueValues.Add(new TrueValueData(line));
+                }
+            }
+
+            return trueValues;
+        }
+
+        static List<List<ApproximationData>> loadApproxData(string pathToData, string[] fileNames, int lines)
+        {
+            List<List<ApproximationData>> approxDatas = new List<List<ApproximationData>>(fileNames.Length);
+
+            for (int i = 0; i < fileNames.Length; i++)
+            {
+                approxDatas.Add(new List<ApproximationData>(lines));
+
+                using (StreamReader reader = File.OpenText(pathToData + fileNames[i]))
+                {
+                    reader.ReadLine();
+
+                    string? line;
+
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        approxDatas[i].Add(new ApproximationData(line));
+                    }
+                }
+            }
+
+            return approxDatas;
         }
     }
 
@@ -295,7 +424,16 @@ namespace DataVisualizer
 
         public override string ToString()
         {
-            return $"func: {integralData.func}, boundsType: {integralData.boundsType}, a: {integralData.a}, b: {integralData.b}, result:  {result}";  
+            return $"func: {integralData.func}, boundsType: {integralData.boundsType}, a: {integralData.a}, b: {integralData.b}, result:  {result}";
         }
     }
+
+    struct PerformanceSummary
+    {
+        public int typeIndex;
+        
+        // Samples, time, error%
+        public List <(int, double, double)> data;
+    }
+
 }
