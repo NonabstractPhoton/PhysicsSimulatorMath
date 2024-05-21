@@ -1,43 +1,12 @@
 #include "SimulatorMath.h"
 
-double z = 10;
-char buffer[250];
-
-
 // Monte Carlo vars
-
 int precision = 1000;
 
 // Quasi Monte Carlo Halton Sequence vars
 double* halton2 = NULL;
 double* halton3 = NULL;
 int haltonSize = 0;
-
-
-/*
-* Internal Function. Logs a double value with a given label. Uses a predeclared char buffer called buffer
-*
-* label: cstr of label to be printed
-*
-* d: double to be printed
-*/
-void _logDouble(const char* label, double d)
-{
-    sprintf(buffer, "%s: %f", label, d);
-    puts(buffer);
-}
-
-//  Internal Primary Function 1 
-double f1(double x, double y)
-{
-    return z/pow((x*x+y*y+z*z), 1.5);
-}
-
-// Internal Primary Function 2
-double f2(double x, double y)
-{
-    return exp(-1 * (x*x + y*y));
-}
 
 /*
 * Performs 2 dimensional numerical integration on the given function using a Midpoint Riemann Sum with n rectangles of equal area spanning the integration bounds.
@@ -48,7 +17,7 @@ double f2(double x, double y)
 *
 * bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
 *
-* n: The amount of rectangles to be used
+* n: The amount of rectnagles to be used
 *
 * returns: The approximated value of the integral
 */
@@ -227,9 +196,14 @@ double _genGaussRand(double lower, double upper, int precision, int samples)
 
 }
 
-double _genPseudoRand(double lower, double upper, int precision)
+/*
+* Sets the precision for the Monte Carlo Numerical Integration. 
+*
+* p: The inverse of the noramlized difference between adjacent possible results in random value generation.
+*/
+void SetMonteCarloPrecision(int p)
 {
-    return lower + (rand() % (int)(precision * (upper - lower + 1)))/precision;
+    precision = p;
 }
 
 /*
@@ -243,7 +217,7 @@ double _genPseudoRand(double lower, double upper, int precision)
 *
 * bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
 *
-* n: The amount of rectnagles to be used
+* n: The amount of rectangles to be used
 *
 * returns: The approximated value of the integral
 */
@@ -265,6 +239,23 @@ double GaussianMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* b
     }
 
     return trueAverage / n * (x2-x1) * (y2-y1);
+}
+
+
+/*
+/* Generates a pseudo random number for use in the pseudorandom Monte-Carlo Numerical Integration
+*
+* lower: Lower bound
+*
+* upper: Upper bound
+*
+* precision: The inverse of the noramlized difference between adjacent possible results. More precisely, each generated value differs by (upper-lower)/precision from its adjacent possible value. 
+*
+* returns: The pseudorandom value according to the specifications
+*/
+double _genPseudoRand(double lower, double upper, int precision)
+{
+    return lower + (rand() % (int)(precision * (upper - lower + 1)))/precision;
 }
 
 /*
@@ -439,125 +430,4 @@ double _timeFunc(NumericalIntegral integralFunc, Function2D func, struct Simulat
     clock_t end = clock();
 
     return ((double) (end - start)) / (double)CLOCKS_PER_SEC * pow(10,3);
-}
-
-int main()
-{
-    srand((unsigned)time(NULL));
-
-    struct SimulatorMathRect rect = {.x1 = -10, .x2 = 10, .y1 = -10, .y2 = 10};
-
-    double output, time;
-
-    // int samples[] = {256, 512, 1024, 2048};
-
-    int samples[33];
-
-    for (int i = 0; i <= 32; i++)
-    {
-        samples[i] = 32 * i + 1024;
-    }
-
-    // int a[] = {10, 100, 1000};
-    // int b[] = {15, 150, 1500};
-
-    int a = 100, b = 150;
-
-    char str[256]; 
-
-    FILE* file = fopen("data/SimpsonsRuleDataDetailed.csv", "w");
-
-    if (file == NULL)
-        return -1;
-
-    fputs("func,samples,boundsType,a,b,time,result\n", file);
-
-    /*
-    for (int i = 0; i < 1024; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            for (int k = 0; k < 3; k++)
-            {
-                struct SimulatorMathRect b1 = {.x1 = 0, .x2 = a[j], .y1 = 0, .y2 = a[j]}; // 0,a, 0,a
-                struct SimulatorMathRect b2 = {.x1 = 0, .x2 = a[j], .y1 = 0, .y2 = b[k]}; // 0,a 0,b
-                struct SimulatorMathRect b3 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = 0, .y2 = a[j]}; // -a,a 0, a
-                struct SimulatorMathRect b4 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = 0, .y2 = b[k]}; // -a,a 0,b
-                struct SimulatorMathRect b5 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = -1 * a[j], .y2 = a[j]}; // -a,-a a,a
-                struct SimulatorMathRect b6 = {.x1 = -1 * a[j], .x2 = a[j], .y1 = -1 * b[k], .y2 = b[k]}; // -a,a -b,b
-
-                struct SimulatorMathRect boundsArr[] = {b1, b2, b3, b4, b5, b6};
-
-                for (int l = 0; l < 6; l++)
-                {
-                    // If the bounds dont consider the b value we have already generated a value
-                    if (l % 2 == 0 && k > 0)
-                    {
-                        continue;
-                    }
-
-                    time = _timeFunc(TrapezoidalSumIntegral2D, f1, &boundsArr[l], samples[i], &output); 
-                    sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a[j],b[k],time,output);
-                    fputs(str,file);
-                    
-                    time = _timeFunc(TrapezoidalSumIntegral2D, f2, &boundsArr[l], samples[i], &output); 
-                    sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a[j],b[k],time,output);
-                    fputs(str,file);
-                }
-
-            }
-        }
-    }
-
-    */
-
-    struct SimulatorMathRect b1 = {.x1 = 0, .x2 = a, .y1 = 0, .y2 = a}; // 0,a, 0,a
-    struct SimulatorMathRect b2 = {.x1 = 0, .x2 = a, .y1 = 0, .y2 = b}; // 0,a 0,b
-    struct SimulatorMathRect b3 = {.x1 = -1 * a, .x2 = a, .y1 = 0, .y2 = a}; // -a,a 0, a
-    struct SimulatorMathRect b4 = {.x1 = -1 * a, .x2 = a, .y1 = 0, .y2 = b}; // -a,a 0,b
-    struct SimulatorMathRect b5 = {.x1 = -1 * a, .x2 = a, .y1 = -1 * a, .y2 = a}; // -a,-a a,a
-    struct SimulatorMathRect b6 = {.x1 = -1 * a, .x2 = a, .y1 = -1 * b, .y2 = b}; // -a,a -b,b
-    struct SimulatorMathRect boundsArr[] = {b1, b2, b3, b4, b5, b6};
-
-   for (int i = 0; i < 33; i++)
-    {
-        for (int l = 0; l < 6; l++)
-        {
-            time = _timeFunc(SimpsonsIntegral2D, f1, &boundsArr[l], samples[i], &output); 
-            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a,b,time,output);
-            fputs(str,file);
-            
-            time = _timeFunc(SimpsonsIntegral2D, f2, &boundsArr[l], samples[i], &output); 
-            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a,b,time,output);
-            fputs(str,file);
-        }
-    }
-
-    return fclose(file);
-    
-    
-    
-    /*
-    
-   _logDouble("\nMidpoint Time",_timeFunc(MidpointSumIntegral2D, f1, &rect, 1000, &output));
-   _logDouble("Result", output);
-
-   _logDouble("\nTrapezoidal Time",_timeFunc(TrapezoidalSumIntegral2D, f1, &rect, 1000, &output));
-   _logDouble("Result", output);
-
-   _logDouble("\nSimpsons Time",_timeFunc(SimpsonsIntegral2D, f1, &rect, 1000, &output));
-   _logDouble("Result", output);
-
-   _logDouble("\nMonte Carlo Time", _timeFunc(MonteCarloIntegral2D, f1, &rect, 1000, &output));
-   _logDouble("Result", output);
-
-    fillHaltons(1000*1000);
-   _logDouble("\nQuasi Monte Carlo Time", _timeFunc(QuasiMonteCarloIntegral2D, f1, &rect,1000*1000, &output));
-    freeHaltons();
-   _logDouble("Result", output);
-
-    */
-
-    return 0;
-    
 }
