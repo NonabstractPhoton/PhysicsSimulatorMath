@@ -47,6 +47,10 @@
             "ScottPlot": {
               "target": "Package",
               "version": "[5.0.34, )"
+            },
+            "alglib.net": {
+              "target": "Package",
+              "version": "[3.19.0, )"
             }
           },
           "imports": [

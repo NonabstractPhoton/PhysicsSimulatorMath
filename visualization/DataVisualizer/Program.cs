@@ -1,9 +1,6 @@
 ﻿using ScottPlot;
-using ScottPlot.LegendLayouts;
-using ScottPlot.TickGenerators;
 using System.Data;
-using System.Diagnostics.CodeAnalysis;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using static alglib;
 
 namespace DataVisualizer
 {
@@ -13,6 +10,7 @@ namespace DataVisualizer
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
             GenerateDetailedGraphs(pathToData);
+            GenerateNormalGraphs(pathToData);
 
         }
 
@@ -39,7 +37,6 @@ namespace DataVisualizer
                     dataObj.error = (dataObj.result - trueVal) / trueVal * 100;
                 }
             }
-
 
 
             for (int i = 0;i < approxFileNames.Length;i++) 
@@ -77,6 +74,92 @@ namespace DataVisualizer
 
                 pTimes.SavePng($"{timeTitle}.png", 1920, 1080);
                 pErrors.SavePng($"{errorTitle}.png", 1920, 1080);
+
+
+                Plot pAvgErrors = new(), pAvgTimes = new();
+
+                var avgTimeTitle = $"{approxFileNames[i][0..^4]} Average Times Regression";
+                var avgErrorTitle = $"{approxFileNames[i][0..^4]} Average Errors Regression";
+
+                pAvgTimes.Title(avgTimeTitle);
+                pAvgErrors.Title(avgErrorTitle);
+
+                pAvgTimes.XLabel("Samples");
+                pAvgErrors.XLabel("Samples");
+
+                pAvgTimes.YLabel("Average Time (milliseconds)");
+                pAvgErrors.YLabel("Average Error (%)");
+
+                List<double> errors = new();
+
+                for (int func = 1; func <= 2; func++)
+                {
+                    List<double> avgErrors = new(), avgTimes = new(), samples = new();
+
+                    var trials = approxDatas[i].Where((data) => data.integralData.func == func).OrderBy((data) => data.samples).ToList();
+
+                    // Average Values Across Bounds
+
+                    while (trials.Count() > 0)
+                    {
+                        var current = trials.Take(6);
+                        avgTimes.Add(current.Average((data) => data.time));
+                        avgErrors.Add(current.Average((data) => data.error));
+                        samples.Add(current.First().samples);
+                        trials = trials.Skip(6).ToList();
+                    }
+
+                    // Plot Avgs Scatter
+
+                    var errPlot = pAvgErrors.Add.Scatter(samples, avgErrors);
+                    var timePlot = pAvgTimes.Add.Scatter(samples, avgTimes);
+
+                    int info = 0;
+
+                    ratint.barycentricinterpolant timeInterpolant = new(), errorInterpolant = new();
+                    lsfit.polynomialfitreport report = new();
+                    xparams _params = new(0);
+
+                    lsfit.polynomialfit(samples.ToArray(), avgTimes.ToArray(), avgTimes.Count(), 3, ref info, timeInterpolant, report, _params);
+
+                    double[] timeCoeffs = new double[3];
+
+                    polint.polynomialbar2pow(timeInterpolant, 0, 1, ref timeCoeffs, _params);
+
+                    double[] errorCoeffs = new double[3];
+
+                    lsfit.polynomialfit(samples.ToArray(), avgErrors.ToArray(), avgErrors.Count(), 2, ref info, errorInterpolant, report, _params);
+
+                    polint.polynomialbar2pow(errorInterpolant, 0, 1, ref errorCoeffs, _params);
+
+
+                    // Plot Regression Lines
+
+                    errPlot.LegendText = $"Func {func} Averages";
+                    timePlot.LegendText = $"Func {func} Averages";
+
+                    var curve = pAvgTimes.Add.Function((x) => timeCoeffs[0] + timeCoeffs[1] * x + timeCoeffs[2] * x * x);
+
+                    curve.LegendText = $"Func {func}, {timeCoeffs[0]} + {timeCoeffs[1]}x + {timeCoeffs[2]}x^2";
+                    curve.LinePattern = LinePattern.Dashed;
+
+
+                    var errLimits = errPlot.GetAxisLimits();
+
+                    curve = pAvgErrors.Add.Function((x) => errorCoeffs[0] + errorCoeffs[1] * x);
+                    
+                    curve.LinePattern = LinePattern.Dashed;
+                    curve.LegendText = $"Func {func}, {errorCoeffs[0]} + {errorCoeffs[1]}x";
+
+                    errors.AddRange(avgErrors);
+                }
+
+                // Auto Scale Correction
+                double minError = errors.Min(), maxError = errors.Max();
+                pAvgErrors.Axes.SetLimitsY(minError < 0 ? minError * 1.25 : minError / 1.25, maxError < 0 ? maxError / 1.25 : maxError * 1.25);
+
+                pAvgErrors.SavePng($"{avgErrorTitle}.png", 1920, 1080);
+                pAvgTimes.SavePng($"{avgTimeTitle}.png", 1920, 1080);
             }
         }
 

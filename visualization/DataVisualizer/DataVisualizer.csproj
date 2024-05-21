@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="alglib.net" Version="3.19.0" />
     <PackageReference Include="ScottPlot" Version="5.0.34" />
   </ItemGroup>
 

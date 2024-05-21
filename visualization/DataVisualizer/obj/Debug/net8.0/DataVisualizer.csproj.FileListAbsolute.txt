@@ -25,3 +25,4 @@ C:\Users\athar\Downloads\Physics Simulator Math\visualization\DataVisualizer\obj
 C:\Users\athar\Downloads\Physics Simulator Math\visualization\DataVisualizer\obj\Debug\net8.0\DataVisualizer.pdb
 C:\Users\athar\Downloads\Physics Simulator Math\visualization\DataVisualizer\obj\Debug\net8.0\DataVisualizer.genruntimeconfig.cache
 C:\Users\athar\Downloads\Physics Simulator Math\visualization\DataVisualizer\obj\Debug\net8.0\ref\DataVisualizer.dll
+C:\Users\athar\Downloads\Physics Simulator Math\visualization\DataVisualizer\bin\Debug\net8.0\alglib.net.dll

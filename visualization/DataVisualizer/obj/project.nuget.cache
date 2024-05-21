@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "+fFeiceNae548hfA4HfUBTfi9sy9rMep0Ixqa8bbp6L3bLh4I+Ws/JivuQntS4hEuHsYIE1YrF7g8qmwJd223Q==",
+  "dgSpecHash": "69vhIYQDGxKiWDrI1THn7s9yOz+pJ/IN5u7uMqmB7NeeAIT5tMrZT8Z1OM4Bytf2tLzM5Uwg4QM2kg/V5ptgxA==",
   "success": true,
   "projectFilePath": "C:\\Users\\athar\\Downloads\\Physics Simulator Math\\visualization\\DataVisualizer\\DataVisualizer.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\athar\\.nuget\\packages\\alglib.net\\3.19.0\\alglib.net.3.19.0.nupkg.sha512",
     "C:\\Users\\athar\\.nuget\\packages\\scottplot\\5.0.34\\scottplot.5.0.34.nupkg.sha512",
     "C:\\Users\\athar\\.nuget\\packages\\skiasharp\\2.88.8\\skiasharp.2.88.8.nupkg.sha512",
     "C:\\Users\\athar\\.nuget\\packages\\skiasharp.nativeassets.linux.nodependencies\\2.88.8\\skiasharp.nativeassets.linux.nodependencies.2.88.8.nupkg.sha512",
