@@ -1,15 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "69vhIYQDGxKiWDrI1THn7s9yOz+pJ/IN5u7uMqmB7NeeAIT5tMrZT8Z1OM4Bytf2tLzM5Uwg4QM2kg/V5ptgxA==",
+  "dgSpecHash": "EhPAVto7OghQ7/YLythCHMlBUhD6TIx32eg7x3M6jXyI13O9IFSrL623ipIwDnHRxi/1w+I2T6C3lg7s7X16aA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\athar\\Downloads\\Physics Simulator Math\\visualization\\DataVisualizer\\DataVisualizer.csproj",
+  "projectFilePath": "/workspaces/PhysicsSimulatorMath/visualization/DataVisualizer/DataVisualizer.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\athar\\.nuget\\packages\\alglib.net\\3.19.0\\alglib.net.3.19.0.nupkg.sha512",
-    "C:\\Users\\athar\\.nuget\\packages\\scottplot\\5.0.34\\scottplot.5.0.34.nupkg.sha512",
-    "C:\\Users\\athar\\.nuget\\packages\\skiasharp\\2.88.8\\skiasharp.2.88.8.nupkg.sha512",
-    "C:\\Users\\athar\\.nuget\\packages\\skiasharp.nativeassets.linux.nodependencies\\2.88.8\\skiasharp.nativeassets.linux.nodependencies.2.88.8.nupkg.sha512",
-    "C:\\Users\\athar\\.nuget\\packages\\skiasharp.nativeassets.macos\\2.88.8\\skiasharp.nativeassets.macos.2.88.8.nupkg.sha512",
-    "C:\\Users\\athar\\.nuget\\packages\\skiasharp.nativeassets.win32\\2.88.8\\skiasharp.nativeassets.win32.2.88.8.nupkg.sha512"
+    "/home/codespace/.nuget/packages/alglib.net/3.19.0/alglib.net.3.19.0.nupkg.sha512",
+    "/home/codespace/.nuget/packages/scottplot/5.0.34/scottplot.5.0.34.nupkg.sha512",
+    "/home/codespace/.nuget/packages/skiasharp/2.88.8/skiasharp.2.88.8.nupkg.sha512",
+    "/home/codespace/.nuget/packages/skiasharp.nativeassets.linux.nodependencies/2.88.8/skiasharp.nativeassets.linux.nodependencies.2.88.8.nupkg.sha512",
+    "/home/codespace/.nuget/packages/skiasharp.nativeassets.macos/2.88.8/skiasharp.nativeassets.macos.2.88.8.nupkg.sha512",
+    "/home/codespace/.nuget/packages/skiasharp.nativeassets.win32/2.88.8/skiasharp.nativeassets.win32.2.88.8.nupkg.sha512"
   ],
   "logs": []
 }

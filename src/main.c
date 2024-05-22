@@ -447,7 +447,7 @@ int main()
 
     struct SimulatorMathRect rect = {.x1 = -10, .x2 = 10, .y1 = -10, .y2 = 10};
 
-    double output, time1, time2;
+    double output1, output2, time1, time2;
 
     // int samples[] = {256, 512, 1024, 2048};
 
@@ -465,7 +465,7 @@ int main()
 
     char str[256]; 
 
-    FILE* file = fopen("data/MidpointSumDataDetailed.csv", "w");
+    FILE* file = fopen("data/SimpsonsRuleDataDetailed.csv", "w");
 
     if (file == NULL)
         return -1;
@@ -528,14 +528,14 @@ int main()
 
             for (int j = 0; j < N; j++)
             {
-                time1 += _timeFunc(MidpointSumIntegral2D, f1, &boundsArr[l], samples[i], &output); 
-                time2 += _timeFunc(MidpointSumIntegral2D, f2, &boundsArr[l], samples[i], &output); 
+                time1 += _timeFunc(SimpsonsIntegral2D, f1, &boundsArr[l], samples[i], &output1); 
+                time2 += _timeFunc(SimpsonsIntegral2D, f2, &boundsArr[l], samples[i], &output2); 
             }
 
-            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a,b,time1/N,output);
+            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a,b,time1/N,output1);
             fputs(str,file);
 
-            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a,b,time2/N,output);
+            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a,b,time2/N,output2);
             fputs(str,file);
         }
     }
