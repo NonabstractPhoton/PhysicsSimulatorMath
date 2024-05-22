@@ -9,7 +9,7 @@ namespace DataVisualizer
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
-            GenerateDetailedGraphs(pathToData);
+            // GenerateDetailedGraphs(pathToData);
             GenerateNormalGraphs(pathToData);
 
         }
@@ -395,7 +395,11 @@ namespace DataVisualizer
 
                     while ((line = reader.ReadLine()) != null)
                     {
-                        approxDatas[i].Add(new ApproximationData(line));
+                        // Quasi Monte Carlo
+                        if (i == 5)
+                            approxDatas[i].Add(new ApproximationData(line, true));
+                        else
+                            approxDatas[i].Add(new ApproximationData(line));
                     }
                 }
             }
@@ -462,7 +466,7 @@ namespace DataVisualizer
         public IntegralData integralData;
         public double time, result, error;
 
-        public ApproximationData(string rawData)
+        public ApproximationData(string rawData, bool sqrtSamples = false)
         {
             var data = rawData.Split(",");
 
@@ -476,7 +480,7 @@ namespace DataVisualizer
 
             integralData = new IntegralData(short.Parse(data[0]), boundsType, short.Parse(data[3]), b);
 
-            samples = int.Parse(data[1]);
+            samples = sqrtSamples ? (int)Math.Sqrt(int.Parse(data[1])) : int.Parse(data[1]);
             time = double.Parse(data[5]);
             result = double.Parse(data[6]);
         }
