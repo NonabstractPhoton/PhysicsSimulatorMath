@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DataVisualizer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a4eb72c96134748cf849c958e5a754c64e2490bd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f01e30aa768fb7e01dfda343b4a31e6e13846566")]
 [assembly: System.Reflection.AssemblyProductAttribute("DataVisualizer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DataVisualizer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
