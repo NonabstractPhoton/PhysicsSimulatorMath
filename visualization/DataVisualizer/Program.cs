@@ -1,16 +1,18 @@
 ﻿using ScottPlot;
 using System.Data;
+using System.Net.WebSockets;
 using static alglib;
 
 namespace DataVisualizer
 {
     internal class Program
     {
+        const int xDim = 1200, yDim = 775;
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
-            // GenerateDetailedGraphs(pathToData);
-            GenerateNormalGraphs(pathToData);
+            GenerateDetailedGraphs(pathToData);
+            // GenerateNormalGraphs(pathToData);
 
         }
 
@@ -38,6 +40,28 @@ namespace DataVisualizer
                 }
             }
 
+
+            Plot pAvgErrors = new(), pAvgTimes = new();
+
+            var avgTimeTitle = $"Detailed Average Times";
+            var avgErrorTitle = $"Detailed Average Errors";
+
+            pAvgTimes.Title(avgTimeTitle);
+            pAvgErrors.Title(avgErrorTitle);
+
+            pAvgTimes.XLabel("Samples");
+            pAvgErrors.XLabel("Samples");
+
+            pAvgTimes.YLabel("Average Time (milliseconds)");
+            pAvgErrors.YLabel("Average Error (%)");
+
+            pAvgTimes.Legend.FontSize = 9;
+            pAvgErrors.Legend.FontSize = 9;
+
+            pAvgTimes.Legend.Orientation = Orientation.Horizontal;
+            pAvgErrors.Legend.Orientation = Orientation.Horizontal;
+
+            var extremeValues = new List<(double, double)>();
 
             for (int i = 0;i < approxFileNames.Length;i++) 
             {
@@ -72,23 +96,8 @@ namespace DataVisualizer
                     }
                 }
 
-                pTimes.SavePng($"{timeTitle}.png", 1920, 1080);
-                pErrors.SavePng($"{errorTitle}.png", 1920, 1080);
-
-
-                Plot pAvgErrors = new(), pAvgTimes = new();
-
-                var avgTimeTitle = $"{approxFileNames[i][0..^4]} Average Times Regression";
-                var avgErrorTitle = $"{approxFileNames[i][0..^4]} Average Errors Regression";
-
-                pAvgTimes.Title(avgTimeTitle);
-                pAvgErrors.Title(avgErrorTitle);
-
-                pAvgTimes.XLabel("Samples");
-                pAvgErrors.XLabel("Samples");
-
-                pAvgTimes.YLabel("Average Time (milliseconds)");
-                pAvgErrors.YLabel("Average Error (%)");
+                pTimes.SavePng($"{timeTitle}.png", xDim, yDim);
+                pErrors.SavePng($"{errorTitle}.png", xDim, yDim);
 
                 List<double> errors = new();
 
@@ -135,12 +144,11 @@ namespace DataVisualizer
 
                     // Plot Regression Lines
 
-                    errPlot.LegendText = $"Func {func} Averages";
-                    timePlot.LegendText = $"Func {func} Averages";
-
+                    errPlot.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Averages";
+                    timePlot.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Averages";
                     var curve = pAvgTimes.Add.Function((x) => timeCoeffs[0] + timeCoeffs[1] * x + timeCoeffs[2] * x * x);
 
-                    curve.LegendText = $"Func {func}, {timeCoeffs[0]} + {timeCoeffs[1]}x + {timeCoeffs[2]}x^2";
+                    curve.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Regression,\n{timeCoeffs[0]} + \n{timeCoeffs[1]}x + \n{timeCoeffs[2]}x^2";
                     curve.LinePattern = LinePattern.Dashed;
 
 
@@ -149,18 +157,28 @@ namespace DataVisualizer
                     curve = pAvgErrors.Add.Function((x) => errorCoeffs[0] + errorCoeffs[1] * x);
                     
                     curve.LinePattern = LinePattern.Dashed;
-                    curve.LegendText = $"Func {func}, {errorCoeffs[0]} + {errorCoeffs[1]}x";
+                    curve.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Regression,\n{errorCoeffs[0]} + \n{errorCoeffs[1]}x";
 
                     errors.AddRange(avgErrors);
+
+                    extremeValues.Add((avgErrors.Min(), avgErrors.Max()));
                 }
-
-                // Auto Scale Correction
-                double minError = errors.Min(), maxError = errors.Max();
-                pAvgErrors.Axes.SetLimitsY(minError < 0 ? minError * 1.25 : minError / 1.25, maxError < 0 ? maxError / 1.25 : maxError * 1.25);
-
-                pAvgErrors.SavePng($"{avgErrorTitle}.png", 1920, 1080);
-                pAvgTimes.SavePng($"{avgTimeTitle}.png", 1920, 1080);
             }
+            var minError = extremeValues.Select((tuple) => tuple.Item1).Min();
+            var maxError = extremeValues.Select(tuple => tuple.Item2).Max();
+
+            if (minError > 0)
+                minError *= 1.25;
+            else minError /= 1.25;
+
+            if (maxError > 0)
+                maxError *= 1.25;
+            else maxError /= 1.25;
+
+            pAvgErrors.Axes.SetLimitsY(minError, maxError);
+
+            pAvgErrors.SavePng($"{avgErrorTitle}.png", xDim, yDim);
+            pAvgTimes.SavePng($"{avgTimeTitle}.png", xDim, yDim);
         }
 
         static void GenerateNormalGraphs(string pathToData)
@@ -310,54 +328,56 @@ namespace DataVisualizer
                 ScottPlot.Panels.LegendPanel timePanel = new(pTimes.Legend)
                 {
                     Edge = Edge.Right,
-                    Alignment = Alignment.UpperCenter
+                    Alignment = Alignment.MiddleCenter
                 };
                 ScottPlot.Panels.LegendPanel errorPanel = new(pErrors.Legend)
                 {
                     Edge = Edge.Right,
-                    Alignment = Alignment.UpperCenter
+                    Alignment = Alignment.MiddleCenter
                 };
 
                 pTimes.Axes.AddPanel(timePanel);
                 pErrors.Axes.AddPanel(errorPanel);
 
-                pTimes.SavePng(timeTitle + ".png", 1920, 1080);
-                pErrors.SavePng(errorTitle + ".png", 1920, 1080);
+                pTimes.SavePng(timeTitle + ".png", xDim, yDim);
+                pErrors.SavePng(errorTitle + ".png", xDim, yDim);
 
             }
-            // TODO - Add Regression
 
-            Plot avgErrorsComparisons = new();
-            Plot avgTimesComparisons = new();
+            Plot avgErrors = new();
+            Plot avgTimes = new();
 
             for (int i = 0; i < approxFileNames.Length; i++)
             {
                 var xs = summary[i].data.Select((triple) => (double)triple.Item1).ToList();
 
                 var yTimes = summary[i].data.Select((triple) => triple.Item2).ToList();
-                var timeInfo = avgTimesComparisons.Add.Scatter(xs, yTimes);
+                var timeInfo = avgTimes.Add.Scatter(xs, yTimes);
                 timeInfo.LegendText = approxFileNames[i][0..^4];
 
 
                 if (i != 3)
                 {
                     var yErrors = summary[i].data.Select((triple) => triple.Item3).ToList();
-                    var errorInfo = avgErrorsComparisons.Add.Scatter(xs, yErrors);
+                    var errorInfo = avgErrors.Add.Scatter(xs, yErrors);
                     errorInfo.LegendText = approxFileNames[i][0..^4];
                 }
             }
 
-            avgTimesComparisons.Title("Average Times");
-            avgErrorsComparisons.Title("Average Errors");
+            avgTimes.Title("Average Times");
+            avgErrors.Title("Average Errors");
 
-            avgTimesComparisons.XLabel("Samples");
-            avgErrorsComparisons.XLabel("Samples");
+            avgTimes.XLabel("Samples");
+            avgErrors.XLabel("Samples");
 
-            avgTimesComparisons.YLabel("Time (milliseconds)");
-            avgErrorsComparisons.YLabel("Error (%)");
+            avgTimes.YLabel("Time (milliseconds)");
+            avgErrors.YLabel("Error (%)");
 
-            avgTimesComparisons.SavePng("Average Times.png", 1920, 1080);
-            avgErrorsComparisons.SavePng("Average Errors.png", 1920, 1080);
+            avgTimes.Legend.Alignment = Alignment.UpperLeft;
+            avgErrors.Legend.Alignment = Alignment.UpperRight;
+
+            avgTimes.SavePng("Average Times.png", xDim, yDim);
+            avgErrors.SavePng("Average Errors.png", xDim, yDim);
         }
 
         static List<TrueValueData> loadTrueData(string pathToData, string valueFileName, int lines)
