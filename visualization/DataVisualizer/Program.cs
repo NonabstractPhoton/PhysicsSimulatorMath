@@ -7,12 +7,12 @@ namespace DataVisualizer
 {
     internal class Program
     {
-        const int xDim = 1920, yDim = 1080;
+        const int xDim = 1200, yDim = 775;
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
             GenerateDetailedGraphs(pathToData);
-            GenerateNormalGraphs(pathToData);
+            // GenerateNormalGraphs(pathToData);
 
         }
 
@@ -25,12 +25,15 @@ namespace DataVisualizer
                 "TrapezoidalSumDataDetailed.csv"
             };
 
+            Color[] methodColors = GenerateColorSpread(approxFileNames.Length * 2);
+
             string valueFileName = "TrueValues.csv";
 
             List<TrueValueData> trueValues = loadTrueData(pathToData, valueFileName, 72);
 
             List<List<ApproximationData>> approxDatas = loadApproxData(pathToData, approxFileNames, 396);
 
+            // Calculate Error
             for (int i = 0; i < approxFileNames.Length; i++)
             {
                 foreach (ApproximationData dataObj in approxDatas[i])
@@ -93,13 +96,12 @@ namespace DataVisualizer
 
                         timePlot.LegendText = $"Func: {func}, Bounds: {boundsType}";
                         errorPlot.LegendText = $"Func: {func}, Bounds: {boundsType}";
+
                     }
                 }
 
                 pTimes.SavePng($"{timeTitle}.png", xDim, yDim);
                 pErrors.SavePng($"{errorTitle}.png", xDim, yDim);
-
-                List<double> errors = new();
 
                 for (int func = 1; func <= 2; func++)
                 {
@@ -144,22 +146,25 @@ namespace DataVisualizer
 
                     // Plot Regression Lines
 
-                    errPlot.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Averages";
                     timePlot.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Averages";
-                    var curve = pAvgTimes.Add.Function((x) => timeCoeffs[0] + timeCoeffs[1] * x + timeCoeffs[2] * x * x);
+                    errPlot.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Averages";
 
+                    var colorIndex = 2 * i + func - 1;
+                    timePlot.Color = methodColors[colorIndex];
+                    errPlot.Color = methodColors[colorIndex];
+
+                    var curve = pAvgTimes.Add.Function((x) => timeCoeffs[0] + timeCoeffs[1] * x + timeCoeffs[2] * x * x);
+                    
                     curve.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Regression,\n{timeCoeffs[0]} + \n{timeCoeffs[1]}x + \n{timeCoeffs[2]}x^2";
                     curve.LinePattern = LinePattern.Dashed;
+                    curve.LineColor = methodColors[colorIndex];
 
-
-                    var errLimits = errPlot.GetAxisLimits();
 
                     curve = pAvgErrors.Add.Function((x) => errorCoeffs[0] + errorCoeffs[1] * x);
                     
                     curve.LinePattern = LinePattern.Dashed;
                     curve.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Regression,\n{errorCoeffs[0]} + \n{errorCoeffs[1]}x";
-
-                    errors.AddRange(avgErrors);
+                    curve.LineColor = methodColors[colorIndex];
 
                     extremeValues.Add((avgErrors.Min(), avgErrors.Max()));
                 }
@@ -184,6 +189,8 @@ namespace DataVisualizer
                 "PsuedoRandMonteCarloData.csv",
                 "QuasiMonteCarloData.csv"
             };
+
+            Color[] methodColors = GenerateColorSpread(approxFileNames.Length);
 
             string valueFileName = "TrueValues.csv";
 
@@ -346,6 +353,7 @@ namespace DataVisualizer
                 var yTimes = summary[i].data.Select((triple) => triple.Item2).ToList();
                 var timeInfo = avgTimes.Add.Scatter(xs, yTimes);
                 timeInfo.LegendText = approxFileNames[i][0..^4];
+                timeInfo.Color = methodColors[i];
 
 
                 if (i != 3)
@@ -353,6 +361,7 @@ namespace DataVisualizer
                     var yErrors = summary[i].data.Select((triple) => triple.Item3).ToList();
                     var errorInfo = avgErrors.Add.Scatter(xs, yErrors);
                     errorInfo.LegendText = approxFileNames[i][0..^4];
+                    errorInfo.Color = methodColors[i];
                 }
             }
 
@@ -417,6 +426,15 @@ namespace DataVisualizer
             }
 
             return approxDatas;
+        }
+
+        static Color[] GenerateColorSpread(int n)
+        {
+            Color[] colors = new Color[n];
+            Random r = new();
+            for (int i = 0; i < n; i++)
+                colors[i] = Color.FromHSL((float)r.NextDouble() * 1f/n + (float)i/n, .95f, .5f);
+            return colors;
         }
     }
 
