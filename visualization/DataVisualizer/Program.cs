@@ -7,12 +7,12 @@ namespace DataVisualizer
 {
     internal class Program
     {
-        const int xDim = 1200, yDim = 775;
+        const int xDim = 1920, yDim = 1080;
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
             GenerateDetailedGraphs(pathToData);
-            // GenerateNormalGraphs(pathToData);
+            GenerateNormalGraphs(pathToData);
 
         }
 

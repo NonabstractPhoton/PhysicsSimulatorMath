@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DataVisualizer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+32e723f7fd41cdeab4546ca50dab129f2f895a62")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5cc1a9640fa1a7f9dc476d8a24663bffafd84a16")]
 [assembly: System.Reflection.AssemblyProductAttribute("DataVisualizer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DataVisualizer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
