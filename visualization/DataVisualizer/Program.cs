@@ -164,16 +164,8 @@ namespace DataVisualizer
                     extremeValues.Add((avgErrors.Min(), avgErrors.Max()));
                 }
             }
-            var minError = extremeValues.Select((tuple) => tuple.Item1).Min();
-            var maxError = extremeValues.Select(tuple => tuple.Item2).Max();
-
-            if (minError > 0)
-                minError *= 1.25;
-            else minError /= 1.25;
-
-            if (maxError > 0)
-                maxError *= 1.25;
-            else maxError /= 1.25;
+            var minError = extremeValues.Select((tuple) => tuple.Item1).Min() * 1.25;
+            var maxError = extremeValues.Select(tuple => tuple.Item2).Max() * 1.25;
 
             pAvgErrors.Axes.SetLimitsY(minError, maxError);
 
