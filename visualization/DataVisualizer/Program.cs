@@ -7,7 +7,7 @@ namespace DataVisualizer
 {
     internal class Program
     {
-        const int xDim = 1920, yDim = 1080;
+        const int xDim = 750, yDim = 300;
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
@@ -58,13 +58,19 @@ namespace DataVisualizer
             pAvgTimes.YLabel("Average Time (milliseconds)");
             pAvgErrors.YLabel("Average Error (%)");
 
-            pAvgTimes.Legend.FontSize = 9;
-            pAvgErrors.Legend.FontSize = 15;
+            pAvgTimes.Legend.FontSize = 14;
+            pAvgErrors.Legend.FontSize = 9;
 
-            pAvgTimes.Legend.Orientation = Orientation.Horizontal;
+            pAvgTimes.Legend.Orientation = Orientation.Vertical;
+            pAvgTimes.Legend.Alignment = Alignment.UpperLeft;
+            pAvgTimes.Legend.InterItemPadding = new PixelPadding(-2);
+            pAvgTimes.Legend.Margin = new PixelPadding(2);
+
             pAvgErrors.Legend.Orientation = Orientation.Horizontal;
+            
 
-            var extremeValues = new List<(double, double)>();
+            var errorExtremes = new List<(double, double)>();
+            double maxTime = 0;
 
             for (int i = 0;i < approxFileNames.Length;i++) 
             {
@@ -124,7 +130,6 @@ namespace DataVisualizer
 
                     var errPlot = pAvgErrors.Add.Scatter(samples, avgErrors);
                     var timePlot = pAvgTimes.Add.Scatter(samples, avgTimes);
-                    timePlot.LinePattern = LinePattern.Dotted;
 
                     int info = 0;
 
@@ -148,7 +153,7 @@ namespace DataVisualizer
                     errPlot.Color = methodColors[colorIndex];
 
                     errPlot.MarkerShape = (MarkerShape)(8 + 2*i + func);
-                    errPlot.MarkerSize *= 5;
+                    errPlot.MarkerSize *= 3;
 
                     var curve = pAvgTimes.Add.Function((x) => timeCoeffs[0] + timeCoeffs[1] * x + timeCoeffs[2] * x * x);
                     
@@ -156,12 +161,16 @@ namespace DataVisualizer
                     curve.LinePattern = LinePattern.Dashed;
                     curve.LineColor = methodColors[colorIndex];
 
-                    extremeValues.Add((avgErrors.Min(), avgErrors.Max()));
+                    errorExtremes.Add((avgErrors.Min(), avgErrors.Max()));
+                    var currMaxTime = avgTimes.Max();
+                    if (currMaxTime > maxTime)
+                        maxTime = currMaxTime;
                 }
             }
-            var minError = extremeValues.Select((tuple) => tuple.Item1).Min() * 1.25;
-            var maxError = extremeValues.Select(tuple => tuple.Item2).Max() * 1.25;
+            var minError = errorExtremes.Select((tuple) => tuple.Item1).Min() * 1.25;
+            var maxError = errorExtremes.Select(tuple => tuple.Item2).Max() * 1.25;
 
+            pAvgTimes.Axes.SetLimitsY(0, maxTime);
             pAvgErrors.Axes.SetLimitsY(minError, maxError);
 
             pAvgErrors.SavePng($"{avgErrorTitle}.png", xDim, yDim);
