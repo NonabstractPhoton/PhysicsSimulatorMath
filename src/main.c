@@ -451,13 +451,13 @@ int main()
 
     struct SimulatorMathRect rect = {.x1 = -10, .x2 = 10, .y1 = -10, .y2 = 10};
 
-    double time, output;
+    // double time, output;
 
-    // double output1, output2, time1, time2;
+    double output1, output2, time1, time2;
 
-    int samples[] = {256*256, 512*512, 1024*1024, 2048*2048};
+    // int samples[] = {256*256, 512*512, 1024*1024, 2048*2048};
 
-    /*
+    
     int samples[33], N = 30;
 
     for (int i = 0; i <= 32; i++)
@@ -465,23 +465,22 @@ int main()
         samples[i] = 32 * i + 1024;
     }
 
-    */
+    
+    // int a[] = {10, 100, 1000};
+    // int b[] = {15, 150, 1500};
 
-    int a[] = {10, 100, 1000};
-    int b[] = {15, 150, 1500};
-
-    // int a = 100, b = 150;
+    int a = 100, b = 150;
 
     char str[256]; 
 
-    FILE* file = fopen("data/PsuedoRandMonteCarloData.csv", "w");
+    FILE* file = fopen("data/TrapezoidalSumDataDetailed.csv", "w");
 
     if (file == NULL)
         return -1;
 
     fputs("func,samples,boundsType,a,b,time,result\n", file);
 
-    
+    /*
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -517,9 +516,8 @@ int main()
             }
         }
     }
-
+    */
     
-    /*
 
     struct SimulatorMathRect b1 = {.x1 = 0, .x2 = a, .y1 = 0, .y2 = a}; // 0,a, 0,a
     struct SimulatorMathRect b2 = {.x1 = 0, .x2 = a, .y1 = 0, .y2 = b}; // 0,a 0,b
@@ -538,21 +536,19 @@ int main()
 
             for (int j = 0; j < N; j++)
             {
-                time1 += _timeFunc(SimpsonsIntegral2D, f1, &boundsArr[l], samples[i], &output1); 
-                time2 += _timeFunc(SimpsonsIntegral2D, f2, &boundsArr[l], samples[i], &output2); 
+                time1 += _timeFunc(TrapezoidalSumIntegral2D, f1, &boundsArr[l], samples[i], &output1); 
+                time2 += _timeFunc(TrapezoidalSumIntegral2D, f2, &boundsArr[l], samples[i], &output2); 
             }
 
-            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",1,samples[i],l+1,a,b,time1/N,output1);
+            sprintf(str, "%d,%d,%d,%d,%d,%.16f,%.16f\n",1,samples[i],l+1,a,b,time1/N,output1);
             fputs(str,file);
 
-            sprintf(str, "%d,%d,%d,%d,%d,%f,%f\n",2,samples[i],l+1,a,b,time2/N,output2);
+            sprintf(str, "%d,%d,%d,%d,%d,%.16f,%.16f\n",2,samples[i],l+1,a,b,time2/N,output2);
             fputs(str,file);
         }
     }
 
     return fclose(file);
-    
-    */
     
     /*
     
