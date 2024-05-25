@@ -7,7 +7,7 @@ namespace DataVisualizer
 {
     internal class Program
     {
-        const int xDim = 1200, yDim = 775;
+        const int xDim = 1920, yDim = 1080;
         static void Main(string[] args)
         {
             string pathToData = Path.GetFullPath("../../../../../data/");
@@ -59,7 +59,7 @@ namespace DataVisualizer
             pAvgErrors.YLabel("Average Error (%)");
 
             pAvgTimes.Legend.FontSize = 9;
-            pAvgErrors.Legend.FontSize = 9;
+            pAvgErrors.Legend.FontSize = 15;
 
             pAvgTimes.Legend.Orientation = Orientation.Horizontal;
             pAvgErrors.Legend.Orientation = Orientation.Horizontal;
@@ -124,10 +124,11 @@ namespace DataVisualizer
 
                     var errPlot = pAvgErrors.Add.Scatter(samples, avgErrors);
                     var timePlot = pAvgTimes.Add.Scatter(samples, avgTimes);
+                    timePlot.LinePattern = LinePattern.Dotted;
 
                     int info = 0;
 
-                    ratint.barycentricinterpolant timeInterpolant = new(), errorInterpolant = new();
+                    ratint.barycentricinterpolant timeInterpolant = new();
                     lsfit.polynomialfitreport report = new();
                     xparams _params = new(0);
 
@@ -136,13 +137,6 @@ namespace DataVisualizer
                     double[] timeCoeffs = new double[3];
 
                     polint.polynomialbar2pow(timeInterpolant, 0, 1, ref timeCoeffs, _params);
-
-                    double[] errorCoeffs = new double[3];
-
-                    lsfit.polynomialfit(samples.ToArray(), avgErrors.ToArray(), avgErrors.Count(), 2, ref info, errorInterpolant, report, _params);
-
-                    polint.polynomialbar2pow(errorInterpolant, 0, 1, ref errorCoeffs, _params);
-
 
                     // Plot Regression Lines
 
@@ -153,17 +147,13 @@ namespace DataVisualizer
                     timePlot.Color = methodColors[colorIndex];
                     errPlot.Color = methodColors[colorIndex];
 
+                    errPlot.MarkerShape = (MarkerShape)(8 + 2*i + func);
+                    errPlot.MarkerSize *= 5;
+
                     var curve = pAvgTimes.Add.Function((x) => timeCoeffs[0] + timeCoeffs[1] * x + timeCoeffs[2] * x * x);
                     
                     curve.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Regression,\n{timeCoeffs[0]} + \n{timeCoeffs[1]}x + \n{timeCoeffs[2]}x^2";
                     curve.LinePattern = LinePattern.Dashed;
-                    curve.LineColor = methodColors[colorIndex];
-
-
-                    curve = pAvgErrors.Add.Function((x) => errorCoeffs[0] + errorCoeffs[1] * x);
-                    
-                    curve.LinePattern = LinePattern.Dashed;
-                    curve.LegendText = $"{approxFileNames[i][0..^16]}, Func {func} Regression,\n{errorCoeffs[0]} + \n{errorCoeffs[1]}x";
                     curve.LineColor = methodColors[colorIndex];
 
                     extremeValues.Add((avgErrors.Min(), avgErrors.Max()));
