@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
-#define PI 3.14159265358979323846
 
 /*
 * A struct containing the rectangular bounds of a 2D integration region. 
