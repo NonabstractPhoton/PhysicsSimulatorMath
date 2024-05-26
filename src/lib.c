@@ -1,35 +1,23 @@
 #include "SimulatorMath.h"
 
-// Monte Carlo vars
-int precision = 1000;
+// Necessary for PtChargeFlux
+double h;
 
-// Quasi Monte Carlo Halton Sequence vars
+// Quasi-Monte Carlo Halton Sequence vars
 double* halton2 = NULL;
 double* halton3 = NULL;
 int haltonSize = 0;
 
-/*
-* Performs 2 dimensional numerical integration on the given function using a Midpoint Riemann Sum with n rectangles of equal area spanning the integration bounds.
-* 
-* Time Complexity: O(n^2)
-* 
-*func: The function of 2 variables to be integrated
-*
-* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
-*
-* n: The amount of rectnagles to be used
-*
-* returns: The approximated value of the integral
-*/
-double MidpointSumIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+
+__declspec( dllexport ) double MidpointSumIntegral2D(Function2D func, const struct SimulatorMathRect* bounds, int n)
 {    
-    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
 
-    double xStep = (x2-x1)/n;
-    double yStep = (y2-y1)/n;
+    const double xStep = (x2-x1)/n;
+    const double yStep = (y2-y1)/n;
 
-    double xStart = x1 + xStep/2;
-    double yStart = y1 + yStep/2;
+    const double xStart = x1 + xStep/2;
+    const double yStart = y1 + yStep/2;
 
     double area = 0;
 
@@ -44,25 +32,13 @@ double MidpointSumIntegral2D(Function2D func, struct SimulatorMathRect* bounds, 
     return area * xStep * yStep;
 }
 
-/*
-* Performs 2 dimensional numerical integration on the given function using an extension of the Trapezoidal Rule with n shapes spanning the integration bounds.
-* 
-* Time Complexity: O(n^2)
-*
-* func: The function of 2 variables to be integrated
-*
-* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
-*
-* n: The amount of rectnagles to be used
-*
-* returns: The approximated value of the integral
-*/
-double TrapezoidalSumIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
-{
-    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
 
-    double xStep = (x2-x1)/n;
-    double yStep = (y2-y1)/n;
+__declspec( dllexport ) double TrapezoidalSumIntegral2D(Function2D func, const struct SimulatorMathRect* bounds, int n)
+{
+    const double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+
+    const double xStep = (x2-x1)/n;
+    const double yStep = (y2-y1)/n;
 
     double area = 0;
 
@@ -90,24 +66,12 @@ double TrapezoidalSumIntegral2D(Function2D func, struct SimulatorMathRect* bound
     return area * xStep * yStep / 4;      
 }
 
-/*
-* Performs 2 dimensional numerical integration on the given function using an extension of Simpson's 3/8 Rule with n shapes spanning the integration bounds.
-* 
-* Time Complexity: O(n^2)
-*
-* func: The function of 2 variables to be integrated
-*
-* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
-*
-* n: The amount of rectnagles to be used
-*
-* returns: The approximated value of the integral
-*/
-double SimpsonsIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+
+__declspec( dllexport ) double SimpsonsIntegral2D(Function2D func, const struct SimulatorMathRect* bounds, int n)
 {
-    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
-    double xStep = (x2-x1)/n;
-    double yStep = (y2-y1)/n;
+    const double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const double xStep = (x2-x1)/n;
+    const double yStep = (y2-y1)/n;
 
     double area = 0;
 
@@ -196,34 +160,11 @@ double _genGaussRand(double lower, double upper, int precision, int samples)
 
 }
 
-/*
-* Sets the precision for the Monte Carlo Numerical Integration. 
-*
-* p: The inverse of the noramlized difference between adjacent possible results in random value generation.
-*/
-void SetMonteCarloPrecision(int p)
-{
-    precision = p;
-}
 
-/*
-* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with a modified gaussian probability distribution.
-* Uses the Central Limit Theorem with n samples of size 50 to approximate true mean result.
-* 
-*
-* Time Complexity: O(n)
-*
-* func: The function of 2 variables to be integrated
-*
-* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
-*
-* n: The amount of rectangles to be used
-*
-* returns: The approximated value of the integral
-*/
-double GaussianMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+__declspec( dllexport ) double GaussianMonteCarloIntegral2D(Function2D func, const struct SimulatorMathRect* bounds, int n)
 {
-    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const int precision = 1000;
     double workingAverage = 0;
     long double trueAverage = 0;
 
@@ -258,24 +199,11 @@ double _genPseudoRand(double lower, double upper, int precision)
     return lower + (rand() % (int)(precision * (upper - lower + 1)))/precision;
 }
 
-/*
-* Performs 2 dimensional numerical integration on the given function using the Monte Carlo Method with a pseudo-random probability distribution.
-* Uses the Central Limit Theorem with n samples of size 100 to approximate true mean result.
-* 
-*
-* Time Complexity: O(n)
-*
-* func: The function of 2 variables to be integrated
-*
-* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
-*
-* n: The amount of rectnagles to be used
-*
-* returns: The approximated value of the integral
-*/
-double PsuedoRandMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+
+__declspec( dllexport ) double PsuedoRandMonteCarloIntegral2D(Function2D func, const struct SimulatorMathRect* bounds, int n)
 {
-    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const int precision = 1000;
     double workingAverage = 0;
     long double trueAverage = 0;
 
@@ -309,14 +237,9 @@ double _haltonSeq(int index, int base){
     }
     return y;
 }
-/*
-* Pre-computes halton sequence values for bases 2 and 3 for use in the Quasi Monte Carlo Integral.
-*
-* Must be called before use the Quasi Monte Carlo Integral for max effeciency on repeated use.
-*
-* Must be freed with FreeHaltons after use.
-*/
-void FillHaltons(int n)
+
+
+__declspec( dllexport ) void FillHaltons(int n)
 {
     if (haltonSize == n)
         return;
@@ -333,35 +256,19 @@ void FillHaltons(int n)
     }
 }
 
-/*
-* Frees the halton sequences generated by FillHaltons
-*/
-void FreeHaltons()
+
+__declspec( dllexport ) void FreeHaltons()
 {
     free(halton2);
     free(halton3);
     haltonSize = 0;
 }
-/*
-* Performs 2 dimensional numerical integration on the given function using a Quasi Monte Carlo method 
-* selecting n values from the Hatlon sequence. Must ensure that the size of the Halton sequence arrays matches n if pre-filled. 
-* Uses the Central Limit Theorem with samples of size 50, thus also handling large values of n.
-* It is highly recommended to use fillHaltons before the execution of this algorithm and freeHaltons after for max effeciency.
-* 
-* Time Complexity: O(n) if fillHaltons is properly called, O(n^2 log(n)) otherwise
-*
-* func: The function of 2 variables to be integrated
-*
-* bounds: The bounds of the integration region in the form of a pointer to a SimulatorMathRect
-*
-* n: The amount of rectnagles to be used
-*
-* returns: The approximated value of the integral
-*/
-double QuasiMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* bounds, int n)
+
+
+__declspec( dllexport ) double QuasiMonteCarloIntegral2D(Function2D func, const struct SimulatorMathRect* bounds, int n)
 {
-    double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
-    double xRange = x2-x1, yRange = y2-y1;
+    const double x1 = bounds->x1, x2 = bounds->x2, y1 = bounds->y1, y2 = bounds->y2;
+    const double xRange = x2-x1, yRange = y2-y1;
     double workingAverage = 0;
     double trueAverage = 0;
 
@@ -408,29 +315,4 @@ double QuasiMonteCarloIntegral2D(Function2D func, struct SimulatorMathRect* boun
         FreeHaltons();
 
     return trueAverage * xRange * yRange;
-}
-
-
-/*
-* Times a NumericalIntegral in milliseconds, optionally logging the result.
-*
-* integralFunc: The NumericalIntegral to be timed
-*
-* func: The Function2D which the NumericalIntegral uses
-*
-* bounds: The SimulatorMathRect that descirbes integration region bounds
-*
-* n: The number of samples the integralFunc will use
-*
-* rresult: The double ptr to store the result of the integral
-*
-* returns: The time elapsed in milliseconds from before and after the integralFunc is called.
-*/
-double _timeFunc(NumericalIntegral integralFunc, Function2D func, struct SimulatorMathRect* bounds, int n, double* result)
-{
-    clock_t start = clock();
-    *result = integralFunc(func, bounds, n);
-    clock_t end = clock();
-
-    return ((double) (end - start)) / (double)CLOCKS_PER_SEC * pow(10,3);
 }
